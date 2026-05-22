@@ -169,7 +169,7 @@ function parseCSV(text) {
     if (!lines[i].trim()) continue;
     const cols = splitCSVLine(lines[i]);
     const servico  = cols[iSrvF] || '';
-    const medStr   = (cols[iMedF] || '0').replace(/\./g,'').replace(',','.');
+    const medStr   = (cols[iMedF] || '0').replace(',','');
     const medida   = parseFloat(medStr) || 0;
     const rodovia  = cols[iRodF] || '';
     const regional = cols[iRegF] || '';
