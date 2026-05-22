@@ -154,16 +154,12 @@ function parseCSV(text) {
     return idx;
   };
 
-  const iSrv = hi(['serviço','servico','service']) !== -1 ? hi(['serviço','servico','service']) : 2;
-  const iMed = hi(['m ','metro','medida','quant','m²','m³','unid']) !== -1 ? hi(['m ','metro','medida','quant','m²','m³','unid']) : 5;
-  const iRod = hi(['rodovia','rod','highway','br-','pr-']) !== -1 ? hi(['rodovia','rod','highway','br-','pr-']) : 7;
-  const iReg = hi(['regional','region']) !== -1 ? hi(['regional','region']) : 8;
-
-  // Se não achou por nome, usa posição fixa C=2, F=5, H=7, I=8
-  const iSrvF = iSrv >= 0 ? iSrv : 2;
-  const iMedF = iMed >= 0 ? iMed : 5;
-  const iRodF = iRod >= 0 ? iRod : 7;
-  const iRegF = iReg >= 0 ? iReg : 8;
+  // Índices fixos conforme estrutura da planilha:
+  // A=0 Data, B=1 Equipe, C=2 Serviço, D=3 km inicial, E=4 km final, F=5 Metragem, G=6 Sentido, H=7 Rodovia, I=8 Regional
+  const iSrvF = 2; // Coluna C — Serviço
+  const iMedF = 5; // Coluna F — Metragem (m)
+  const iRodF = 7; // Coluna H — Rodovia
+  const iRegF = 8; // Coluna I — Regional
 
   const unidade = header[iMedF] || 'm';
   console.log(`[CSV] Colunas: serviço=${iSrvF}, medida=${iMedF}(${unidade}), rodovia=${iRodF}, regional=${iRegF}`);
