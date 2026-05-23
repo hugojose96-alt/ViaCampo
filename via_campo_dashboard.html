@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Via Campo — Plano de Ação</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a2070;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100vh}
+.header{background:#1e277a;padding:11px 28px;border-bottom:2px solid #3d48c0;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:6px}
+.brand-icon{width:36px;height:36px;background:#e8c040;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.brand-icon svg{width:22px;height:22px}
+.brand-name{font-size:18px;font-weight:700;color:#fff;letter-spacing:.5px}
+.brand-name span{color:#e8c040}
+.brand-sub{font-size:10px;color:#a0aadd;letter-spacing:2px;text-transform:uppercase;margin-top:1px}
+.header-right{text-align:right;font-size:12px;color:#a0aadd}
+.header-right strong{display:block;color:#e8c040;font-size:13px}
+.tabs{display:flex;background:#1e277a;border-bottom:2px solid #3d48c0;padding:0 28px}
+.tab{padding:11px 22px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:#7888c0;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
+.tab.active{color:#e8c040;border-bottom-color:#e8c040}
+.tab:hover:not(.active){color:#c0c8e8}
+.body{padding:18px 28px}
+.status-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-text{color:#a0aadd}
+.refresh-btn{margin-left:auto;background:rgba(232,192,64,0.15);color:#e8c040;border:1px solid rgba(232,192,64,0.4);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif;font-weight:600}
+.refresh-btn:hover{background:rgba(232,192,64,0.28)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:#1e277a;border-radius:9px;padding:12px 14px;border:1px solid #3d48c0}
+.kpi-label{font-size:10px;color:#a0aadd;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.kpi-value{font-size:21px;font-weight:700;color:#fff}
+.kpi-value span{font-size:12px;font-weight:400;color:#a0aadd;margin-left:3px}
+.kpi-badge{display:inline-block;margin-top:3px;font-size:10px;padding:2px 7px;border-radius:20px}
+.bb{background:rgba(96,165,250,0.15);color:#93c5fd}
+.bg{background:rgba(232,192,64,0.15);color:#e8c040}
+.bn{background:rgba(74,222,128,0.15);color:#4ade80}
+.bp{background:rgba(167,139,250,0.15);color:#a78bfa}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;background:#1e277a;padding:10px 14px;border-radius:8px;border:1px solid #3d48c0}
+.fl{font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+select{background:#2B34A0;color:#fff;border:1px solid #4d5cd0;border-radius:6px;padding:5px 9px;font-size:11px;outline:none;cursor:pointer;font-family:'Segoe UI',sans-serif}
+select:focus{border-color:#e8c040}
+.fc{background:transparent;color:#7888c0;border:1px solid #3d48c0;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif}
+.fc:hover{background:#2d38b0;color:#fff}
+.fcount{margin-left:auto;font-size:10px;color:#5060a0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.cb{background:#1e277a;border-radius:9px;padding:14px 16px;border:1px solid #3d48c0;margin-bottom:12px}
+.ct{font-size:11px;font-weight:600;color:#d0d8f0;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px}
+.cs{font-size:10px;color:#7888c0;margin-bottom:8px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#a0aadd}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.tw{overflow-y:auto;max-height:300px;border-radius:5px}
+.tw::-webkit-scrollbar{width:5px}.tw::-webkit-scrollbar-track{background:#1a2070}.tw::-webkit-scrollbar-thumb{background:#3d48c0;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:#16206a;color:#a0aadd;padding:6px 9px;text-align:left;border-bottom:2px solid #2d38b0;font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0;z-index:2}
+td{padding:5px 9px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d0d8f0;white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,0.03)}
+.bs{display:inline-block;padding:1px 6px;border-radius:9px;font-size:10px;font-weight:600}
+.r1{background:rgba(96,165,250,0.2);color:#93c5fd}.r2{background:rgba(232,192,64,0.2);color:#e8c040}.r3{background:rgba(74,222,128,0.2);color:#4ade80}
+.jleve{background:rgba(74,222,128,0.2);color:#4ade80}.jmedio{background:rgba(251,146,60,0.2);color:#fb923c}.jalto{background:rgba(248,113,113,0.2);color:#f87171}
+.jdupla{background:rgba(96,165,250,0.2);color:#93c5fd}.jsimples{background:rgba(232,192,64,0.2);color:#e8c040}
+.kbranco{background:rgba(255,255,255,0.12);color:#e0e8ff}.kamarelo{background:rgba(250,204,21,0.2);color:#facc15}
+.loading{display:flex;align-items:center;justify-content:center;height:180px;flex-direction:column;gap:10px;color:#7888c0;font-size:13px}
+.spinner{width:28px;height:28px;border:3px solid #2d38b0;border-top-color:#e8c040;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:8px;font-size:11px;color:#8898cc;border-top:1px solid #2d38b0;margin-top:4px;letter-spacing:.5px}
+.empty{text-align:center;padding:30px;color:#5060a0;font-size:13px}
+.rw{position:relative;overflow-x:auto}
+.tt{position:absolute;background:#0d1648f0;border:1px solid #3d48c0;border-radius:7px;padding:7px 11px;font-size:11px;color:#e0e8ff;pointer-events:none;display:none;z-index:30;white-space:nowrap;line-height:1.7;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="16" height="16" rx="3" fill="#2B34A0"/>
+        <path d="M11 5 L16 14 H6 Z" fill="#e8c040" opacity=".9"/>
+        <line x1="7" y1="12" x2="15" y2="12" stroke="#2B34A0" stroke-width="1.5"/>
+        <line x1="8.5" y1="15" x2="13.5" y2="15" stroke="#2B34A0" stroke-width="1.2"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name"><span>Via</span> <span>Campo</span></div>
+      <div class="brand-sub">Plano de Ação</div>
+    </div>
+  </div>
+  <div class="header-right"><strong id="hDate">—</strong>Planejamento de Obras</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('drenagem',this)">Drenagem Superficial</div>
+  <div class="tab" onclick="switchTab('sinalizacao',this)">Sin. Horizontal</div>
+</div>
+
+<div class="body">
+  <div class="status-bar">
+    <div class="dot" id="sDot"></div>
+    <span class="status-text" id="sTxt">Conectando...</span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Atualizar</button>
+  </div>
+  <div id="mc"><div class="loading"><div class="spinner"></div>Carregando dados...</div></div>
+</div>
+<div class="footer">Via Campo Concessão Rodoviária</div>
+
+<script>
+document.getElementById('hDate').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+const CSVS={
+  drenagem:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=269296572&single=true&output=csv',
+  sinalizacao:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=206273543&single=true&output=csv'
+};
+// Colunas: A=0,B=1,C=2(Srv),D=3(kmI),E=4(kmF),F=5(Med),G=6(Sen),H=7(Rod),I=8(Reg),J=9,K=10
+const C={S:2,KI:3,KF:4,M:5,SE:6,RO:7,RE:8,J:9,K:10};
+let AD={drenagem:null,sinalizacao:null},CH={},AT='drenagem',AF={rod:'all',reg:'all',j:'all',k:'all'};
+const CL=['#60a5fa','#e8c040','#4ade80','#f87171','#a78bfa','#fb923c'];
+const CR={'Regional 1':'#60a5fa','Regional 2':'#e8c040','Regional 3':'#4ade80','Regional 4':'#f87171'};
+const GC='rgba(255,255,255,0.07)',TC='#8898cc';
+
+function fmtBR(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+
+function sl(l){
+  const r=[];let c='',q=false;
+  for(let i=0;i<l.length;i++){
+    const ch=l[i];
+    if(ch==='"'){if(q&&l[i+1]==='"'){c+='"';i++;}else q=!q;}
+    else if(ch===','&&!q){r.push(c.trim());c='';}
+    else c+=ch;
+  }
+  r.push(c.trim());return r;
+}
+
+function pn(s){
+  if(!s||!s.trim())return 0;
+  const c=s.replace(/[^\d,\.]/g,'');
+  if(c.includes(',')&&c.includes('.'))return parseFloat(c.replace(/\./g,'').replace(',','.'))||0;
+  if(c.includes(','))return parseFloat(c.replace(',','.'))||0;
+  return parseFloat(c)||0;
+}
+
+function parseCSV(txt){
+  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length<2)return{rows:[],hdr:'m'};
+  const h=sl(lines[0]);
+  const hdr=h[C.M]||'m';
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const c=sl(lines[i]);
+    const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
+    if(!rod||!reg||!srv)continue;
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||''});
+  }
+  return{rows,hdr};
+}
+
+async function fetchCSV(url){
+  const px=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url)];
+  for(const u of px){try{const r=await fetch(u);if(!r.ok)continue;const t=await r.text();const d=parseCSV(t);if(d.rows.length)return d;}catch(e){}}
+  throw new Error('Falha ao carregar CSV');
+}
+
+function setSt(ok,msg){document.getElementById('sDot').style.background=ok?'#4ade80':'#f87171';document.getElementById('sTxt').textContent=msg;}
+
+async function loadAll(){
+  setSt(true,'Carregando...');
+  document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
+  const[dr,si]=await Promise.allSettled([fetchCSV(CSVS.drenagem),fetchCSV(CSVS.sinalizacao)]);
+  if(dr.status==='fulfilled')AD.drenagem=dr.value;
+  if(si.status==='fulfilled')AD.sinalizacao=si.value;
+  const tot=(AD.drenagem?.rows?.length||0)+(AD.sinalizacao?.rows?.length||0);
+  setSt(true,`Atualizado ${new Date().toLocaleTimeString('pt-BR')} — ${tot} registros`);
+  render();
+}
+
+function switchTab(t,el){AT=t;AF={rod:'all',reg:'all',j:'all',k:'all'};document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');render();}
+function gf(){let r=AD[AT]?.rows||[];if(AF.rod!=='all')r=r.filter(x=>x.rod===AF.rod);if(AF.reg!=='all')r=r.filter(x=>x.reg===AF.reg);if(AF.j!=='all')r=r.filter(x=>x.j===AF.j);if(AF.k!=='all')r=r.filter(x=>x.k===AF.k);return r;}
+function ag(rows,key){return rows.reduce((m,r)=>{m[r[key]]=(m[r[key]]||0)+r.med;return m;},{});}
+function dc(){Object.values(CH).forEach(c=>{try{c.destroy();}catch(e){}});CH={};}
+
+// ── Retigráfico ───────────────────────────────────────────────────────────────
+function buildReti(id,rows,isSin){
+  const cv=document.getElementById(id);if(!cv)return;
+  const dpr=window.devicePixelRatio||1,W=cv.parentElement.offsetWidth||700,H=280;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const ML=72,MR=20,MT=22,MB=46,CW=W-ML-MR,CHH=H-MT-MB;
+  const kms=rows.flatMap(r=>[r.kmI,r.kmF]).filter(v=>v>0);
+  if(!kms.length){ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;}
+  const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
+  const toX=km=>ML+((km-KM0)/KMR)*CW;
+  ctx.clearRect(0,0,W,H);
+  // Grid
+  const step=Math.ceil(KMR/10)||1;
+  ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,MT+CHH);ctx.stroke();}
+  ctx.setLineDash([]);
+
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  const nRods=rods.length;
+  const slotH=Math.floor((CHH-10)/nRods);
+  const ROAD=10,CANT=8,LANE=Math.max(10,Math.floor((slotH-ROAD-CANT-16)/2));
+
+  rods.forEach((rod,ri)=>{
+    const yBase=MT+5+ri*slotH;
+    const yMid=yBase+slotH/2;
+
+    // Label rodovia
+    ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
+    ctx.fillText(rod,ML-5,yMid+4);
+
+    // Faixa da rodovia (asfalto base)
+    const roadTop=yMid-ROAD/2;
+    ctx.fillStyle='rgba(255,255,255,0.09)';
+    ctx.fillRect(ML,roadTop,CW,ROAD);
+    ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.5;
+    ctx.strokeRect(ML,roadTop,CW,ROAD);
+
+    // Linha central tracejada (divisão de pistas sem canteiro)
+    ctx.setLineDash([8,5]);ctx.strokeStyle='rgba(232,192,64,0.35)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ML,yMid);ctx.lineTo(ML+CW,yMid);ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Verificar se tem canteiro central nesta rodovia
+    const temCanteiro=rows.some(r=>r.rod===rod&&r.sen.toLowerCase().includes('canteiro'));
+
+    if(temCanteiro){
+      // Canteiro central — faixa verde no meio
+      const cantH=CANT;
+      ctx.fillStyle='rgba(74,222,128,0.25)';
+      ctx.fillRect(ML,yMid-cantH/2,CW,cantH);
+      ctx.strokeStyle='rgba(74,222,128,0.5)';ctx.lineWidth=1;
+      ctx.strokeRect(ML,yMid-cantH/2,CW,cantH);
+      // Texto canteiro
+      ctx.fillStyle='rgba(74,222,128,0.7)';ctx.font='8px Segoe UI';ctx.textAlign='center';
+      ctx.fillText('CANTEIRO',ML+CW/2,yMid+3);
+    }
+
+    // Desenhar serviços
+    const rowsRod=rows.filter(r=>r.rod===rod);
+    rowsRod.forEach(r=>{
+      if(!r.kmI&&!r.kmF)return;
+      const x0=toX(r.kmI),x1=toX(r.kmF),bw=Math.max(x1-x0,3);
+      const senLow=r.sen.toLowerCase();
+      const isCant=senLow.includes('canteiro');
+      const isDec=senLow.includes('dec');
+
+      let cor,yOff,bh;
+
+      if(isCant){
+        // Canteiro: barra sobre a faixa verde do canteiro
+        cor='#4ade80';
+        yOff=-(CANT/2+1);
+        bh=CANT-2;
+        // Não desenha acima/abaixo, apenas sobre o canteiro
+        ctx.fillStyle=cor+'99';
+        ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,2);ctx.fill();
+        ctx.strokeStyle=cor;ctx.lineWidth=1;
+        ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,2);ctx.stroke();
+        if(bw>22){ctx.fillStyle='#fff';ctx.font='bold 9px Segoe UI';ctx.textAlign='center';ctx.fillText('↔',x0+bw/2,yMid+yOff+bh/2+3);}
+        return;
+      }
+
+      // Cor para drenagem: azul=crescente, vermelho=decrescente
+      // Cor para sin: azul=dupla, dourado=simples
+      if(isSin){
+        cor=r.j.toLowerCase().includes('dupla')?'#60a5fa':'#e8c040';
+      } else {
+        cor=isDec?'#f87171':'#60a5fa';
+      }
+
+      bh=LANE;
+      if(isDec){
+        // Abaixo da linha central
+        yOff=ROAD/2+3;
+      } else {
+        // Acima da linha central
+        yOff=-(ROAD/2+bh+3);
+      }
+
+      ctx.fillStyle=cor+'bb';
+      ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,3);ctx.fill();
+      ctx.strokeStyle=cor;ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,3);ctx.stroke();
+      if(bw>20){ctx.fillStyle='#fff';ctx.font='bold 10px Segoe UI';ctx.textAlign='center';ctx.fillText(isDec?'←':'→',x0+bw/2,yMid+yOff+bh/2+4);}
+    });
+
+    // Labels de sentido
+    ctx.font='8px Segoe UI';ctx.textAlign='start';
+    ctx.fillStyle='#60a5fa';ctx.fillText('Crescente →',ML+3,yMid-ROAD/2-LANE-5);
+    ctx.fillStyle='#f87171';ctx.fillText('← Decrescente',ML+3,yMid+ROAD/2+LANE+12);
+    if(temCanteiro){ctx.fillStyle='#4ade80';ctx.fillText('↔ Canteiro',ML+CW/2+30,yMid+4);}
+  });
+
+  // Eixo km
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ML,MT+CHH);ctx.lineTo(ML+CW,MT+CHH);ctx.stroke();
+  for(let k=KM0;k<=KM1;k+=step){
+    const x=toX(k);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,MT+CHH);ctx.lineTo(x,MT+CHH+4);ctx.stroke();
+    ctx.fillStyle='#7888c0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('km '+k.toFixed(0),x,MT+CHH+14);
+  }
+  ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('Quilometragem',ML+CW/2,H-5);
+
+  // Tooltip
+  const tt=document.getElementById('tt');
+  cv.onmousemove=function(e){
+    const rect=cv.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const km=KM0+((mx-ML)/CW)*KMR;
+    const hit=rows.find(r=>km>=r.kmI&&km<=r.kmF);
+    if(hit&&mx>=ML&&mx<=ML+CW){
+      const isSen=hit.sen.toLowerCase().includes('canteiro');
+      const jTxt=isSin?`<br>Pista: <span style="color:${hit.j.toLowerCase().includes('dupla')?'#93c5fd':'#e8c040'}">${hit.j}</span><br>Cor: ${hit.k}`
+        :`<br>Grau: <span style="color:${hit.j==='Alto'?'#f87171':hit.j.includes('dio')?'#fb923c':'#4ade80'}">${hit.j}</span>`;
+      tt.innerHTML=`<strong style="color:#e8c040">km ${hit.kmI.toFixed(3)} – ${hit.kmF.toFixed(3)}</strong><br>Serviço: ${hit.srv}<br>Sentido: <span style="color:${isSen?'#4ade80':hit.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa'}">${hit.sen}</span><br>Rodovia: ${hit.rod}<br>Regional: ${hit.reg}${jTxt}<br>Medida: <strong>${fmtBR(hit.med)} m</strong>`;
+      tt.style.display='block';
+      tt.style.left=(mx+14)+'px';
+      tt.style.top=(e.clientY-rect.top-10)+'px';
+    }else tt.style.display='none';
+  };
+  cv.onmouseleave=()=>tt.style.display='none';
+}
+
+// ── Render principal ──────────────────────────────────────────────────────────
+function render(){
+  dc();
+  const data=AD[AT];
+  const isSin=AT==='sinalizacao';
+  const jLbl=isSin?'Pista':'Grau';
+
+  if(!data?.rows?.length){
+    document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha.</div>';
+    return;
+  }
+
+  const rows=data.rows,un=data.hdr||'m';
+  const fil=gf();
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+  const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
+  const kVals=isSin?[...new Set(rows.map(r=>r.k).filter(Boolean))].sort():[];
+
+  // Somas apenas col F
+  const totM=rows.reduce((a,r)=>a+r.med,0);
+  const filM=fil.reduce((a,r)=>a+r.med,0);
+
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const bRR={};fil.forEach(r=>{if(!bRR[r.rod])bRR[r.rod]={};bRR[r.rod][r.reg]=(bRR[r.rod][r.reg]||0)+r.med;});
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+
+  document.getElementById('mc').innerHTML=`
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="filters">
+    <span class="fl">Filtros:</span>
+    <select id="fRod" onchange="applyF()"><option value="all">Todas as rodovias</option>${rods.map(r=>`<option value="${r}"${AF.rod===r?' selected':''}>${r}</option>`).join('')}</select>
+    <select id="fReg" onchange="applyF()"><option value="all">Todas as regionais</option>${regs.map(r=>`<option value="${r}"${AF.reg===r?' selected':''}>${r}</option>`).join('')}</select>
+    <select id="fJ" onchange="applyF()"><option value="all">Todos — ${jLbl}</option>${jVals.map(v=>`<option value="${v}"${AF.j===v?' selected':''}>${v}</option>`).join('')}</select>
+    ${isSin?`<select id="fK" onchange="applyF()"><option value="all">Todas as cores</option>${kVals.map(v=>`<option value="${v}"${AF.k===v?' selected':''}>${v}</option>`).join('')}</select>`:''}
+    <button class="fc" onclick="clearF()">Limpar</button>
+    <span class="fcount">${fil.length} de ${rows.length}</span>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Perfil Horizontal</div>
+    <div class="cs">${isSin?'Azul=Dupla · Dourado=Simples':'Azul=Crescente · Vermelho=Decrescente'} · Verde=Canteiro Central · Passe o mouse para detalhes</div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Por Rodovia e Regional</div><div class="cs">Total de ${un} por rodovia e regional</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>${jLbl}</th>${isSin?'<th>Cor</th>':''}<th style="text-align:right">${un}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildReti('reti',fil,isSin));
+
+  // Legenda
+  const leg1=document.getElementById('leg1');
+  reL.forEach((reg,i)=>{const cor=CR[reg]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${reg}</span>`;});
+
+  // Barras agrupadas
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:reL.map((reg,i)=>{const cor=CR[reg]||CL[i%CL.length];return{label:reg,data:RL.map(r=>bRR[r]?.[reg]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Rosca
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
+
+  // Rodovias
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Tabela
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=isSin?(r.j.toLowerCase().includes('dupla')?'jdupla':'jsimples'):(r.j==='Alto'?'jalto':r.j.includes('dio')?'jmedio':'jleve');
+    const kc=r.k.toLowerCase()==='amarelo'?'kamarelo':'kbranco';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      ${isSin?`<td><span class="bs ${kc}">${r.k}</span></td>`:''}
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
+    </tr>`;
+  });
+}
+
+function applyF(){
+  AF.rod=document.getElementById('fRod').value;
+  AF.reg=document.getElementById('fReg').value;
+  AF.j=document.getElementById('fJ').value;
+  if(AT==='sinalizacao'){const fk=document.getElementById('fK');if(fk)AF.k=fk.value;}
+  render();
+}
+function clearF(){AF={rod:'all',reg:'all',j:'all',k:'all'};render();}
+loadAll();
+</script>
+</body>
+</html>
