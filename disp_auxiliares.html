@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Via Campo — Dispositivos Auxiliares</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a2070;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100vh}
+.header{background:#1e277a;padding:11px 28px;border-bottom:2px solid #3d48c0;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:6px}
+.brand-sub{font-size:10px;color:#a0aadd;letter-spacing:2px;text-transform:uppercase;margin-top:1px}
+.header-right{text-align:right;font-size:12px;color:#a0aadd}
+.header-right strong{display:block;color:#e8c040;font-size:13px}
+.tabs{display:flex;background:#1e277a;border-bottom:2px solid #3d48c0;padding:0 28px}
+.tab{padding:11px 22px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:#7888c0;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
+.tab.active{color:#e8c040;border-bottom-color:#e8c040}
+.tab:hover:not(.active){color:#c0c8e8}
+.body{padding:18px 28px}
+.status-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-text{color:#a0aadd}
+.refresh-btn{margin-left:auto;background:rgba(232,192,64,0.15);color:#e8c040;border:1px solid rgba(232,192,64,0.4);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif;font-weight:600}
+.refresh-btn:hover{background:rgba(232,192,64,0.28)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:#1e277a;border-radius:9px;padding:12px 14px;border:1px solid #3d48c0}
+.kpi-label{font-size:10px;color:#a0aadd;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.kpi-value{font-size:21px;font-weight:700;color:#fff}
+.kpi-value span{font-size:12px;font-weight:400;color:#a0aadd;margin-left:3px}
+.kpi-badge{display:inline-block;margin-top:3px;font-size:10px;padding:2px 7px;border-radius:20px}
+.bb{background:rgba(96,165,250,0.15);color:#93c5fd}
+.bg{background:rgba(232,192,64,0.15);color:#e8c040}
+.bn{background:rgba(74,222,128,0.15);color:#4ade80}
+.bp{background:rgba(167,139,250,0.15);color:#a78bfa}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.cb{background:#1e277a;border-radius:9px;padding:14px 16px;border:1px solid #3d48c0;margin-bottom:12px}
+.ct{font-size:11px;font-weight:600;color:#d0d8f0;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px}
+.cs{font-size:10px;color:#7888c0;margin-bottom:8px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#a0aadd}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.tw{overflow-y:auto;max-height:300px;border-radius:5px}
+.tw::-webkit-scrollbar{width:5px}.tw::-webkit-scrollbar-track{background:#1a2070}.tw::-webkit-scrollbar-thumb{background:#3d48c0;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:#16206a;color:#a0aadd;padding:6px 9px;text-align:left;border-bottom:2px solid #2d38b0;font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0;z-index:2}
+td{padding:5px 9px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d0d8f0;white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,0.03)}
+.bs{display:inline-block;padding:1px 6px;border-radius:9px;font-size:10px;font-weight:600}
+.r1{background:rgba(96,165,250,0.2);color:#93c5fd}.r2{background:rgba(232,192,64,0.2);color:#e8c040}.r3{background:rgba(74,222,128,0.2);color:#4ade80}
+.jdupla{background:rgba(96,165,250,0.2);color:#93c5fd}.jsimples{background:rgba(232,192,64,0.2);color:#e8c040}
+.loading{display:flex;align-items:center;justify-content:center;height:180px;flex-direction:column;gap:10px;color:#7888c0;font-size:13px}
+.spinner{width:28px;height:28px;border:3px solid #2d38b0;border-top-color:#e8c040;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:8px;font-size:11px;color:#8898cc;border-top:1px solid #2d38b0;margin-top:4px;letter-spacing:.5px}
+.empty{text-align:center;padding:30px;color:#5060a0;font-size:13px}
+.rw{position:relative;overflow-x:auto}
+.tt{position:absolute;background:#0d1648f0;border:1px solid #3d48c0;border-radius:7px;padding:7px 11px;font-size:11px;color:#e0e8ff;pointer-events:none;display:none;z-index:30;white-space:nowrap;line-height:1.7;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.err-box{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.4);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:#fca5a5;line-height:1.6}
+.err-box strong{display:block;color:#f87171;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">
+    <img style="height:50px;border-radius:6px" id="hLogo" alt="Via Campo">
+    <div><div class="brand-sub">Plano de Ação</div></div>
+  </div>
+  <div class="header-right"><strong id="hDate">—</strong>Planejamento de Obras</div>
+</div>
+
+<div style="background:#182060;padding:6px 28px;font-size:10px;color:#5060a0;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0">DISPOSITIVOS AUXILIARES — DADOS AO VIVO DA PLANILHA</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('disp',this)">Disp. Auxiliares</div>
+</div>
+
+<div class="body">
+  <div class="status-bar">
+    <div class="dot" id="sDot"></div>
+    <span class="status-text" id="sTxt">Conectando...</span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Atualizar</button>
+  </div>
+  <div id="mc"><div class="loading"><div class="spinner"></div>Carregando dados...</div></div>
+</div>
+<div class="footer">Via Campo Concessão Rodoviária</div>
+
+<script>
+document.getElementById('hDate').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+const LOGO="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";
+document.getElementById('hLogo').src='data:image/jpeg;base64,'+LOGO;
+
+// URL da aba Disp.Auxiliares — ajuste o gid conforme a aba publicada na planilha
+const CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=disp_auxiliares&single=true&output=csv';
+
+// Mapeamento de colunas — ajuste os índices conforme a estrutura real da aba Disp.Auxiliares
+const C={S:2,KI:3,KF:4,M:5,SE:6,RO:7,RE:8,J:9,K:10};
+
+let AD=null,ERR=null,CH={},AF={},AR='all';
+const CL=['#60a5fa','#e8c040','#4ade80','#f87171','#a78bfa','#fb923c'];
+const CR={'Regional 1':'#60a5fa','Regional 2':'#e8c040','Regional 3':'#4ade80','Regional 4':'#f87171'};
+const GC='rgba(255,255,255,0.07)',TC='#8898cc';
+
+function fmtBR(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+
+function sl(l){
+  const r=[];let c='',q=false;
+  for(let i=0;i<l.length;i++){
+    const ch=l[i];
+    if(ch==='"'){if(q&&l[i+1]==='"'){c+='"';i++;}else q=!q;}
+    else if(ch===','&&!q){r.push(c.trim());c='';}
+    else c+=ch;
+  }
+  r.push(c.trim());return r;
+}
+
+function pn(s){
+  if(!s||!s.trim())return 0;
+  const c=s.replace(/[^\d,\.]/g,'');
+  if(c.includes(',')&&c.includes('.'))return parseFloat(c.replace(/\./g,'').replace(',','.'))||0;
+  if(c.includes(','))return parseFloat(c.replace(',','.'))||0;
+  return parseFloat(c)||0;
+}
+
+function parseCSV(txt){
+  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length<2)return{rows:[],hdr:'un'};
+  const h=sl(lines[0]);
+  const hdr=h[C.M]||'un';
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const c=sl(lines[i]);
+    const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
+    if(!rod||!reg||!srv)continue;
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||''});
+  }
+  return{rows,hdr};
+}
+
+async function fetchCSV(url){
+  const proxies=[
+    url,
+    'https://corsproxy.io/?'+encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+    'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url)
+  ];
+  let lastErr='';
+  for(const u of proxies){
+    try{
+      const r=await fetch(u,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok){lastErr=`HTTP ${r.status}`;continue;}
+      const t=await r.text();
+      if(t.includes('<!DOCTYPE')||t.includes('<html')){lastErr='Resposta HTML (aba não publicada?)';continue;}
+      const d=parseCSV(t);
+      if(d.rows.length)return d;
+      lastErr='CSV sem registros válidos';
+    }catch(e){lastErr=e.message;}
+  }
+  throw new Error(lastErr||'Todos os proxies falharam');
+}
+
+function setSt(ok,msg){
+  document.getElementById('sDot').style.background=ok?'#4ade80':'#f87171';
+  document.getElementById('sTxt').textContent=msg;
+}
+
+async function loadAll(){
+  setSt(true,'Carregando...');
+  document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
+  try{AD=await fetchCSV(CSV_URL);ERR=null;}
+  catch(e){ERR=e.message;AD=null;}
+  if(AD?.rows?.length){
+    setSt(true,`Atualizado ${new Date().toLocaleTimeString('pt-BR')} — ${AD.rows.length} registros`);
+  }else{
+    setSt(false,ERR?`Erro: ${ERR}`:'Erro ao carregar dados');
+  }
+  render();
+}
+
+function switchTab(t,el){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function switchRod(rod,el){
+  AR=rod;AF={};
+  document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function gf(){
+  let r=AD?.rows||[];
+  if(AR!=='all')r=r.filter(x=>x.rod===AR);
+  return r;
+}
+
+function ag(rows,key){return rows.reduce((m,r)=>{m[r[key]]=(m[r[key]]||0)+r.med;return m;},{});}
+function dc(){Object.values(CH).forEach(c=>{try{c.destroy();}catch(e){}});CH={};}
+
+// ── Retigráfico ────────────────────────────────────────────────────────────────
+function buildReti(id,rows){
+  const cv=document.getElementById(id);if(!cv)return;
+  const dpr=window.devicePixelRatio||1,W=cv.parentElement.offsetWidth||700;
+  const rodsU=[...new Set(rows.map(r=>r.rod))].sort();
+  const LANE_H=14,LANE_GAP=3,ROAD_LABEL=16,BLOCK_PAD=14;
+
+  function getFaixas(rod){
+    const rs=rows.filter(r=>r.rod===rod);
+    const isDupla=rs.some(r=>r.j&&r.j.toLowerCase().includes('dupla'));
+    const combos=new Set();
+    rs.forEach(r=>{
+      const senL=r.sen.toLowerCase();
+      const isCant=senL.includes('canteiro');
+      const isDec=senL.includes('dec');
+      const cor=r.k.toLowerCase().includes('amarelo')?'amarelo':'branco';
+      if(isCant){combos.add('cant');}
+      else if(isDupla){const prefix=isDec?'dec':'cre';combos.add(prefix+'_'+cor);}
+      else{const prefix=isDec?'dec':'cre';combos.add(prefix+'_'+cor);}
+    });
+    const nLanes=Math.max(combos.size,2);
+    return{nLanes,isDupla,combos};
+  }
+
+  const rodInfo={};
+  rodsU.forEach(rod=>rodInfo[rod]=getFaixas(rod));
+  const totalLanes=rodsU.reduce((s,rod)=>s+rodInfo[rod].nLanes,0);
+  const H=Math.max(200,BLOCK_PAD*2+ROAD_LABEL*rodsU.length+totalLanes*(LANE_H+LANE_GAP)+LANE_GAP*rodsU.length*2+60);
+
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const ML=76,MR=20,MT=16,MB=46,CW=W-ML-MR,CHH=H-MT-MB;
+
+  const kms=rows.flatMap(r=>[r.kmI,r.kmF]).filter(v=>v>0);
+  if(!kms.length){ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;}
+  const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
+  const toX=km=>ML+((km-KM0)/KMR)*CW;
+
+  ctx.clearRect(0,0,W,H);
+  const step=Math.ceil(KMR/10)||1;
+  ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,MT+CHH);ctx.stroke();}
+  ctx.setLineDash([]);
+
+  function getFaixaConfig(key){
+    if(key==='cant') return{cor:'#4ade80',label:'Canteiro',light:'rgba(74,222,128,0.18)'};
+    if(key==='cre_branco') return{cor:'#60a5fa',label:'Cres. — Bordo',light:'rgba(96,165,250,0.12)'};
+    if(key==='cre_amarelo') return{cor:'#e8c040',label:'Cres. — Eixo',light:'rgba(232,192,64,0.12)'};
+    if(key==='dec_branco') return{cor:'#f87171',label:'Decres. — Bordo',light:'rgba(248,113,113,0.12)'};
+    if(key==='dec_amarelo') return{cor:'#fb923c',label:'Decres. — Eixo',light:'rgba(251,146,60,0.12)'};
+    return{cor:'#a78bfa',label:key,light:'rgba(167,139,250,0.12)'};
+  }
+
+  function getRowKey(r){
+    const senL=r.sen.toLowerCase();
+    if(senL.includes('canteiro'))return'cant';
+    const prefix=senL.includes('dec')?'dec':'cre';
+    const cor=r.k.toLowerCase().includes('amarelo')?'amarelo':'branco';
+    return prefix+'_'+cor;
+  }
+
+  let yOff=MT+BLOCK_PAD;
+  rodsU.forEach(rod=>{
+    const rsRod=rows.filter(r=>r.rod===rod);
+    const{combos}=rodInfo[rod];
+    const orderedKeys=['cre_branco','cre_amarelo','cant','dec_amarelo','dec_branco'];
+    const keys=orderedKeys.filter(k=>combos.has(k));
+    combos.forEach(k=>{if(!orderedKeys.includes(k))keys.push(k);});
+    const blockH=ROAD_LABEL+keys.length*(LANE_H+LANE_GAP);
+    ctx.fillStyle='rgba(255,255,255,0.04)';
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);else ctx.rect(ML,yOff,CW,blockH);
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);else ctx.rect(ML,yOff,CW,blockH);
+    ctx.stroke();
+    ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
+    ctx.fillText(rod,ML-5,yOff+ROAD_LABEL/2+4);
+    let laneY=yOff+ROAD_LABEL;
+    keys.forEach(key=>{
+      const cfg=getFaixaConfig(key);
+      ctx.fillStyle=cfg.light;ctx.fillRect(ML,laneY,CW,LANE_H);
+      ctx.fillStyle=cfg.cor;ctx.font='7px Segoe UI';ctx.textAlign='end';
+      ctx.fillText(cfg.label,ML-2,laneY+LANE_H/2+3);
+      ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.moveTo(ML,laneY);ctx.lineTo(ML+CW,laneY);ctx.stroke();
+      rsRod.filter(r=>getRowKey(r)===key).forEach(r=>{
+        if(!r.kmI&&!r.kmF)return;
+        const x0=toX(r.kmI),x1=toX(r.kmF),bw=Math.max(x1-x0,3);
+        ctx.fillStyle=cfg.cor+'cc';
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(x0,laneY+1,bw,LANE_H-2,2);else ctx.rect(x0,laneY+1,bw,LANE_H-2);
+        ctx.fill();
+        ctx.strokeStyle=cfg.cor;ctx.lineWidth=1;
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(x0,laneY+1,bw,LANE_H-2,2);else ctx.rect(x0,laneY+1,bw,LANE_H-2);
+        ctx.stroke();
+        if(bw>28){ctx.fillStyle='#fff';ctx.font='bold 8px Segoe UI';ctx.textAlign='center';ctx.fillText(r.k||'—',x0+bw/2,laneY+LANE_H/2+3);}
+      });
+      laneY+=LANE_H+LANE_GAP;
+    });
+    yOff+=blockH+BLOCK_PAD;
+  });
+
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ML,MT+CHH);ctx.lineTo(ML+CW,MT+CHH);ctx.stroke();
+  for(let k=KM0;k<=KM1;k+=step){
+    const x=toX(k);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,MT+CHH);ctx.lineTo(x,MT+CHH+4);ctx.stroke();
+    ctx.fillStyle='#7888c0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('km '+k.toFixed(0),x,MT+CHH+14);
+  }
+  ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('Quilometragem',ML+CW/2,H-5);
+
+  const tt=document.getElementById('tt');
+  cv.onmousemove=function(e){
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(W/rect.width);
+    const my=(e.clientY-rect.top)*(H/rect.height);
+    const km=KM0+((mx-ML)/CW)*KMR;
+    const hit=rows.find(r=>km>=r.kmI&&km<=r.kmF);
+    if(hit&&mx>=ML&&mx<=ML+CW){
+      const jc=hit.j.toLowerCase().includes('dupla')?'#93c5fd':'#e8c040';
+      tt.innerHTML=`<strong style="color:#e8c040">km ${hit.kmI.toFixed(3)} – ${hit.kmF.toFixed(3)}</strong><br>Serviço: ${hit.srv}<br>Sentido: ${hit.sen}<br>Rodovia: ${hit.rod} · Regional: ${hit.reg}<br>Pista: <span style="color:${jc}">${hit.j}</span><br>Medida: <strong>${fmtBR(hit.med)} un</strong>`;
+      tt.style.display='block';
+      const px=(e.clientX-rect.left),py=(e.clientY-rect.top);
+      tt.style.left=(px+14)+'px';tt.style.top=(py-10)+'px';
+    }else tt.style.display='none';
+  };
+  cv.onmouseleave=()=>tt.style.display='none';
+}
+
+// ── Render principal ──────────────────────────────────────────────────────────
+function render(){
+  dc();
+  const data=AD;
+  const err=ERR;
+
+  if(!data?.rows?.length){
+    let html='';
+    if(err){
+      html+=`<div class="err-box">
+        <strong>⚠ Não foi possível carregar os dados</strong>
+        Erro: ${err}<br><br>
+        <strong>Como resolver:</strong> Abra a planilha → Arquivo → Compartilhar → Publicar na Web → selecione a aba <em>"Disp.Auxiliares"</em> → escolha <em>CSV</em> → clique em <em>Publicar</em>. Depois cole o GID correto na variável <code>CSV_URL</code> e clique em ↻ Atualizar.
+      </div>`;
+    }
+    html+='<div class="empty">Sem dados disponíveis.</div>';
+    document.getElementById('mc').innerHTML=html;
+    return;
+  }
+
+  const rows=data.rows,un=data.hdr||'un';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+
+  const totM=rows.reduce((a,r)=>a+r.med,0);
+  const filM=fil.reduce((a,r)=>a+r.med,0);
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+  const pistaColors={'Dupla':'#60a5fa','dupla':'#60a5fa','Simples':'#e8c040','simples':'#e8c040'};
+
+  document.getElementById('mc').innerHTML=`
+  ${err?`<div class="err-box"><strong>⚠ Atenção</strong>${err}</div>`:''}
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Distribuição por Sentido</div>
+    <div class="cs">
+      <span style="color:#60a5fa">■</span> Cres. Bordo &nbsp;
+      <span style="color:#e8c040">■</span> Cres. Eixo &nbsp;
+      <span style="color:#4ade80">■</span> Canteiro &nbsp;
+      <span style="color:#fb923c">■</span> Decres. Eixo &nbsp;
+      <span style="color:#f87171">■</span> Decres. Bordo
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Pista por Rodovia</div><div class="cs">Distribuição Dupla/Simples por rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo — Disp. Auxiliares</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>Pista</th><th style="text-align:right">${un}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildReti('reti',fil));
+
+  // Legenda por pista
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  jL.forEach((j,i)=>{const cor=pistaColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por pista por rodovia
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.med;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=pistaColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
+
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=r.j.toLowerCase().includes('dupla')?'jdupla':'jsimples';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
+    </tr>`;
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>
