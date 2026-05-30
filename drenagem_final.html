@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Via Campo — Drenagem Superficial</title>
+<title>Via Campo — Limpeza de Drenagem Superficial</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -79,7 +79,7 @@ tr:hover td{background:rgba(255,255,255,0.03)}
   <div class="header-right"><strong id="hDate">—</strong>Planejamento de Obras</div>
 </div>
 
-<div style="background:#182060;padding:6px 28px;font-size:10px;color:#5060a0;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0">DRENAGEM SUPERFICIAL — DADOS AO VIVO DA PLANILHA</div>
+<div style="background:#182060;padding:6px 28px;font-size:10px;color:#5060a0;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0">LIMPEZA DE DRENAGEM SUPERFICIAL — DADOS AO VIVO DA PLANILHA</div>
 
 <div class="body">
   <div class="status-bar">
@@ -162,8 +162,10 @@ async function loadAll(){
   render();
 }
 
-function switchTab(t,el){AT=t;AF={rod:'all',reg:'all',j:'all',k:'all'};document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');render();}
-function gf(){let r=AD[AT]?.rows||[];if(AF.rod!=='all')r=r.filter(x=>x.rod===AF.rod);if(AF.reg!=='all')r=r.filter(x=>x.reg===AF.reg);if(AF.j!=='all')r=r.filter(x=>x.j===AF.j);if(AF.k!=='all')r=r.filter(x=>x.k===AF.k);return r;}
+let AR='all';
+function switchTab(t,el){AT=t;AF={rod:'all',reg:'all',j:'all',k:'all'};AR='all';document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');render();}
+function switchRod(rod,el){AR=rod;AF={rod:'all',reg:'all',j:'all',k:'all'};document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));el.classList.add('active');render();}
+function gf(){let r=AD[AT]?.rows||[];const rodF=AR!=='all'?AR:(AF.rod!=='all'?AF.rod:'all');if(rodF!=='all')r=r.filter(x=>x.rod===rodF);if(AF.reg!=='all')r=r.filter(x=>x.reg===AF.reg);if(AF.j!=='all')r=r.filter(x=>x.j===AF.j);if(AF.k!=='all')r=r.filter(x=>x.k===AF.k);return r;}
 function ag(rows,key){return rows.reduce((m,r)=>{m[r[key]]=(m[r[key]]||0)+r.med;return m;},{});}
 function dc(){Object.values(CH).forEach(c=>{try{c.destroy();}catch(e){}});CH={};}
 
@@ -327,8 +329,9 @@ function render(){
   }
 
   const rows=data.rows,un=data.hdr||'m';
-  const fil=gf();
   const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
   const regs=[...new Set(rows.map(r=>r.reg))].sort();
   const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
   const kVals=isSin?[...new Set(rows.map(r=>r.k).filter(Boolean))].sort():[];
@@ -342,6 +345,10 @@ function render(){
   const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
 
   document.getElementById('mc').innerHTML=`
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
     <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
@@ -351,7 +358,6 @@ function render(){
 
   <div class="filters">
     <span class="fl">Filtros:</span>
-    <select id="fRod" onchange="applyF()"><option value="all">Todas as rodovias</option>${rods.map(r=>`<option value="${r}"${AF.rod===r?' selected':''}>${r}</option>`).join('')}</select>
     <select id="fReg" onchange="applyF()"><option value="all">Todas as regionais</option>${regs.map(r=>`<option value="${r}"${AF.reg===r?' selected':''}>${r}</option>`).join('')}</select>
     <select id="fJ" onchange="applyF()"><option value="all">Todos — ${jLbl}</option>${jVals.map(v=>`<option value="${v}"${AF.j===v?' selected':''}>${v}</option>`).join('')}</select>
     ${isSin?`<select id="fK" onchange="applyF()"><option value="all">Todas as cores</option>${kVals.map(v=>`<option value="${v}"${AF.k===v?' selected':''}>${v}</option>`).join('')}</select>`:''}
@@ -367,7 +373,7 @@ function render(){
 
   <div class="g2">
     <div class="cb" style="margin-bottom:0">
-      <div class="ct">Por Rodovia e Regional</div><div class="cs">Total de ${un} por rodovia e regional</div>
+      <div class="ct">Grau por Rodovia</div><div class="cs">Distribuição de grau por rodovia</div>
       <div class="leg" id="leg1"></div>
       <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
     </div>
@@ -394,12 +400,15 @@ function render(){
 
   requestAnimationFrame(()=>buildReti('reti',fil,isSin));
 
-  // Legenda
+  // Legenda por grau
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
   const leg1=document.getElementById('leg1');
-  reL.forEach((reg,i)=>{const cor=CR[reg]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${reg}</span>`;});
+  const jColors={'Alto':'#f87171','Médio':'#fb923c','medio':'#fb923c','Leve':'#4ade80','leve':'#4ade80','alto':'#f87171'};
+  jL.forEach((j,i)=>{const cor=jColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
 
-  // Barras agrupadas
-  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:reL.map((reg,i)=>{const cor=CR[reg]||CL[i%CL.length];return{label:reg,data:RL.map(r=>bRR[r]?.[reg]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+  // Barras agrupadas por grau por rodovia
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.med;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=jColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
 
   // Rosca
   const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
@@ -429,13 +438,12 @@ function render(){
 }
 
 function applyF(){
-  AF.rod=document.getElementById('fRod').value;
   AF.reg=document.getElementById('fReg').value;
   AF.j=document.getElementById('fJ').value;
   if(AT==='sinalizacao'){const fk=document.getElementById('fK');if(fk)AF.k=fk.value;}
   render();
 }
-function clearF(){AF={rod:'all',reg:'all',j:'all',k:'all'};render();}
+function clearF(){AF={rod:'all',reg:'all',j:'all',k:'all'};AR='all';document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));const first=document.querySelector('.rtab');if(first)first.classList.add('active');render();}
 loadAll();
 </script>
 </body>
