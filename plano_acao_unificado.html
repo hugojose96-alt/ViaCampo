@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Via Campo — Plano de Ação</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a2070;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100vh}
+.header{background:#1e277a;padding:11px 28px;border-bottom:2px solid #3d48c0;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:6px}
+.brand-sub{font-size:10px;color:#a0aadd;letter-spacing:2px;text-transform:uppercase;margin-top:1px}
+.header-right{text-align:right;font-size:12px;color:#a0aadd}
+.header-right strong{display:block;color:#e8c040;font-size:13px}
+.tabs{display:flex;background:#1e277a;border-bottom:2px solid #3d48c0;padding:0 12px 0 28px;overflow-x:auto;flex-wrap:nowrap}
+.tabs::-webkit-scrollbar{height:3px}.tabs::-webkit-scrollbar-track{background:#1a2070}.tabs::-webkit-scrollbar-thumb{background:#3d48c0;border-radius:3px}
+.tab{padding:11px 16px;font-size:11px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:#7888c0;transition:all .2s;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.tab.active{color:#e8c040;border-bottom-color:#e8c040}
+.tab:hover:not(.active){color:#c0c8e8}
+.tab-sep{width:1px;background:#2d38b0;margin:8px 2px;flex-shrink:0;align-self:stretch}
+.svc-label{font-size:9px;color:#4050a0;letter-spacing:1.5px;text-transform:uppercase;padding:0 6px;align-self:center;white-space:nowrap;flex-shrink:0}
+.body{padding:18px 28px}
+.status-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-text{color:#a0aadd}
+.refresh-btn{margin-left:auto;background:rgba(232,192,64,0.15);color:#e8c040;border:1px solid rgba(232,192,64,0.4);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif;font-weight:600}
+.refresh-btn:hover{background:rgba(232,192,64,0.28)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:#1e277a;border-radius:9px;padding:12px 14px;border:1px solid #3d48c0}
+.kpi-label{font-size:10px;color:#a0aadd;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.kpi-value{font-size:21px;font-weight:700;color:#fff}
+.kpi-value span{font-size:12px;font-weight:400;color:#a0aadd;margin-left:3px}
+.kpi-badge{display:inline-block;margin-top:3px;font-size:10px;padding:2px 7px;border-radius:20px}
+.bb{background:rgba(96,165,250,0.15);color:#93c5fd}
+.bg{background:rgba(232,192,64,0.15);color:#e8c040}
+.bn{background:rgba(74,222,128,0.15);color:#4ade80}
+.bp{background:rgba(167,139,250,0.15);color:#a78bfa}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;background:#1e277a;padding:10px 14px;border-radius:8px;border:1px solid #3d48c0}
+.fl{font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+select{background:#2B34A0;color:#fff;border:1px solid #4d5cd0;border-radius:6px;padding:5px 9px;font-size:11px;outline:none;cursor:pointer;font-family:'Segoe UI',sans-serif}
+select:focus{border-color:#e8c040}
+.fc{background:transparent;color:#7888c0;border:1px solid #3d48c0;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif}
+.fc:hover{background:#2d38b0;color:#fff}
+.fcount{margin-left:auto;font-size:10px;color:#5060a0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.cb{background:#1e277a;border-radius:9px;padding:14px 16px;border:1px solid #3d48c0;margin-bottom:12px}
+.ct{font-size:11px;font-weight:600;color:#d0d8f0;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px}
+.cs{font-size:10px;color:#7888c0;margin-bottom:8px}
+.leg{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:#a0aadd}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.tw{overflow-y:auto;max-height:300px;border-radius:5px}
+.tw::-webkit-scrollbar{width:5px}.tw::-webkit-scrollbar-track{background:#1a2070}.tw::-webkit-scrollbar-thumb{background:#3d48c0;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:#16206a;color:#a0aadd;padding:6px 9px;text-align:left;border-bottom:2px solid #2d38b0;font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0;z-index:2}
+td{padding:5px 9px;border-bottom:1px solid rgba(255,255,255,0.05);color:#d0d8f0;white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,0.03)}
+.bs{display:inline-block;padding:1px 6px;border-radius:9px;font-size:10px;font-weight:600}
+.r1{background:rgba(96,165,250,0.2);color:#93c5fd}.r2{background:rgba(232,192,64,0.2);color:#e8c040}.r3{background:rgba(74,222,128,0.2);color:#4ade80}
+.jdupla{background:rgba(96,165,250,0.2);color:#93c5fd}.jsimples{background:rgba(232,192,64,0.2);color:#e8c040}
+.kbranco{background:rgba(255,255,255,0.12);color:#e0e8ff}.kamarelo{background:rgba(250,204,21,0.2);color:#facc15}
+.loading{display:flex;align-items:center;justify-content:center;height:180px;flex-direction:column;gap:10px;color:#7888c0;font-size:13px}
+.spinner{width:28px;height:28px;border:3px solid #2d38b0;border-top-color:#e8c040;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;padding:8px;font-size:11px;color:#8898cc;border-top:1px solid #2d38b0;margin-top:4px;letter-spacing:.5px}
+.empty{text-align:center;padding:30px;color:#5060a0;font-size:13px}
+.rw{position:relative;overflow-x:auto}
+.tt{position:absolute;background:#0d1648f0;border:1px solid #3d48c0;border-radius:7px;padding:7px 11px;font-size:11px;color:#e0e8ff;pointer-events:none;display:none;z-index:30;white-space:nowrap;line-height:1.7;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.err-box{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.4);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:#fca5a5;line-height:1.6}
+.err-box strong{display:block;color:#f87171;margin-bottom:4px}
+.svc-banner{background:#182060;padding:6px 28px;font-size:10px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0;color:#5060a0;transition:color .3s}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="brand">
+    <img style="height:50px;border-radius:6px" id="hLogo" alt="Via Campo">
+    <div><div class="brand-sub">Plano de Ação</div></div>
+  </div>
+  <div class="header-right"><strong id="hDate">—</strong>Planejamento de Obras</div>
+</div>
+
+<div class="svc-banner" id="svcBanner">PLANO DE AÇÃO — DADOS AO VIVO DA PLANILHA</div>
+
+<div class="tabs">
+  <span class="svc-label">Sin. Horiz.</span>
+  <div class="tab active" onclick="switchTab('mec',this)">Mecânico</div>
+  <div class="tab" onclick="switchTab('man',this)">Manual</div>
+  <div class="tab-sep"></div>
+  <div class="tab" onclick="switchTab('drenagem',this)">Drenagem</div>
+  <div class="tab-sep"></div>
+  <div class="tab" onclick="switchTab('poda',this)">Poda de Árvores</div>
+  <div class="tab-sep"></div>
+  <div class="tab" onclick="switchTab('rocada',this)">Roçada Manual</div>
+  <div class="tab-sep"></div>
+  <div class="tab" onclick="switchTab('disp',this)">Disp. Auxiliares</div>
+</div>
+
+<div class="body">
+  <div class="status-bar">
+    <div class="dot" id="sDot"></div>
+    <span class="status-text" id="sTxt">Conectando...</span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Atualizar</button>
+  </div>
+  <div id="mc"><div class="loading"><div class="spinner"></div>Carregando dados...</div></div>
+</div>
+<div class="footer">Via Campo Concessão Rodoviária</div>
+
+<script>
+document.getElementById('hDate').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+const LOGO="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IiTm5ycpeWEtLSCIiwKEREAREQBERAAcoqWKpAEREAVqSUNV08lgSklyqI2XPSTlXo5Q7msFXISd8K6MUzPJwseSfdOArr/ZWC45cojJsvNqDnisljw4L5yyackuCNETMpERQyCIiAIiIAiIgCIiAIiIAiIgCE4RUv5ICC9A9UJ3oQvIqW8lUhQiIgCIiAIiIAiIgCIiAgDClEQBERAFizRZOQspQQCgaMDsyr8MWDlX9xuc4VQGFdkSIIyFiSxfS4LMVLt3vUQaMERklZUUe6qm7meCuK7CQRFSXgKFKkUBwKlAEREAREQBEUZCAlERAERRkICVDhkKUQFogoGq4cIMINADAUoiAIiIAiIgCIiAIiIAiIgIacqVSwKpAEREAREQBERAUuOAsOSUl3DksqUfRKwSMFVGMipshBWZHIHBYCy4W4IRkiyuWTcWI6Qkq/UhYqqDLrJSHcVmNdvDK+e32gs6IYaoyxLiIihkEREBbc5U5Kl3NQqQuNdwVSttVZ5KFKXFUZKlw4qFSFbXKXHAVLOal/JQpSSgcoRUheCKG8lKhQiIgCIiAIiIAiIgCIiADgiIgCIiAIiIAiIgBGQseSAE5WQiDRitpxnislrQ0KUQaKXNDljvpxngspEGjHZAAcrIAwiIAiIgCIiApc3Kp3FcRAQBhSiICC0FUbiuIgIAwpIyiICgsUhqqRAEREAREQBERAEREAREQBERAUtOQqlS0KpAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEVO+FIIKAlERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAUt5KHIiAoUt5oipEXQiIoUIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiA/9k=";
+document.getElementById('hLogo').src='data:image/jpeg;base64,'+LOGO;
+
+// ── URLs das planilhas ────────────────────────────────────────────────────────
+const CSVS={
+  mec:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=206273543&single=true&output=csv',
+  man:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=457075190&single=true&output=csv',
+  drenagem:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=269296572&single=true&output=csv',
+  poda:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1033014728&single=true&output=csv',
+  rocada:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=795251438&single=true&output=csv',
+  disp:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1193100781&single=true&output=csv'
+};
+
+const SVC_NAMES={
+  mec:'SINALIZAÇÃO HORIZONTAL — MECÂNICO — DADOS AO VIVO',
+  man:'SINALIZAÇÃO HORIZONTAL — MANUAL — DADOS AO VIVO',
+  drenagem:'LIMPEZA DE DRENAGEM SUPERFICIAL — DADOS AO VIVO',
+  poda:'PODA DE ÁRVORES — DADOS AO VIVO',
+  rocada:'ROÇADA MANUAL — DADOS AO VIVO',
+  disp:'DISPOSITIVOS AUXILIARES — DADOS AO VIVO'
+};
+
+const C={S:2,KI:3,KF:4,M:5,SE:6,RO:7,RE:8,J:9,K:10};
+let AD={mec:null,man:null,drenagem:null,poda:null,disp:null};
+let AD_ROC=null;
+let ERRS={mec:null,man:null,drenagem:null,poda:null,rocada:null,disp:null};
+let CH={},AT='mec',AF={k:'all',j:'all',reg:'all'};
+let AR='all';
+const CL=['#60a5fa','#e8c040','#4ade80','#f87171','#a78bfa','#fb923c'];
+const CR={'Regional 1':'#60a5fa','Regional 2':'#e8c040','Regional 3':'#4ade80','Regional 4':'#f87171'};
+const GC='rgba(255,255,255,0.07)',TC='#8898cc';
+
+function fmtBR(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+
+function sl(l){
+  const r=[];let c='',q=false;
+  for(let i=0;i<l.length;i++){
+    const ch=l[i];
+    if(ch==='"'){if(q&&l[i+1]==='"'){c+='"';i++;}else q=!q;}
+    else if(ch===','&&!q){r.push(c.trim());c='';}
+    else c+=ch;
+  }
+  r.push(c.trim());return r;
+}
+
+function pn(s){
+  if(!s||!s.trim())return 0;
+  const c=s.replace(/[^\d,\.]/g,'');
+  if(c.includes(',')&&c.includes('.'))return parseFloat(c.replace(/\./g,'').replace(',','.'))||0;
+  if(c.includes(','))return parseFloat(c.replace(',','.'))||0;
+  return parseFloat(c)||0;
+}
+
+// ── parseCSV padrão (sin, drenagem, poda, disp) ───────────────────────────────
+function parseCSV(txt){
+  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length<2)return{rows:[],hdr:'m²'};
+  const h=sl(lines[0]);
+  const hdr=h[C.M]||'m²';
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const c=sl(lines[i]);
+    const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
+    if(!rod||!reg||!srv)continue;
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||''});
+  }
+  return{rows,hdr};
+}
+
+// ── parseCSV roçada (tem colunas m2 e med) ────────────────────────────────────
+function parseCSVRocada(txt){
+
+  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
+  if(lines.length<2)return{rows:[],hdrM:'m',hdrK:'m²'};
+  const h=sl(lines[0]);
+  const hdrM=h[C.M]||'m';
+  const hdrK=h[C.K]||'m²';
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const c=sl(lines[i]);
+    const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
+    if(!rod||!reg||!srv)continue;
+    rows.push({srv,med:pn(c[C.M]),m2:pn(c[C.K]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||''});
+  }
+  return{rows,hdrM,hdrK};
+}
+
+async function fetchCSV(url){
+  const proxies=[
+    url,
+    'https://corsproxy.io/?'+encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(url),
+    'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url)
+  ];
+  let lastErr='';
+  for(const u of proxies){
+    try{
+      const r=await fetch(u,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok){lastErr=`HTTP ${r.status}`;continue;}
+      const t=await r.text();
+      if(t.includes('<!DOCTYPE')||t.includes('<html')){lastErr='Resposta HTML (aba não publicada?)';continue;}
+      const d=parseCSV(t);
+      if(d.rows.length)return d;
+      lastErr='CSV sem registros válidos';
+    }catch(e){lastErr=e.message;}
+  }
+  throw new Error(lastErr||'Todos os proxies falharam');
+}
+
+function setSt(ok,msg){
+  document.getElementById('sDot').style.background=ok?'#4ade80':'#f87171';
+  document.getElementById('sTxt').textContent=msg;
+}
+
+async function loadAll(){
+  setSt(true,'Carregando...');
+  document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
+  const keys=[['mec',false],['man',false],['drenagem',false],['poda',false],['rocada',true],['disp',false]];
+  let total=0;
+  for(const [key,isRoc] of keys){
+    try{
+      const raw=await fetchCSVRaw(CSVS[key]);
+      if(isRoc){AD_ROC=parseCSVRocada(raw);total+=AD_ROC?.rows?.length||0;}
+      else{AD[key]=parseCSV(raw);total+=AD[key]?.rows?.length||0;}
+      ERRS[key]=null;
+    }catch(e){ERRS[key]=e.message;}
+  }
+  const errs=Object.entries(ERRS).filter(([,v])=>v);
+  if(total>0){
+    setSt(errs.length===0,`Atualizado ${new Date().toLocaleTimeString('pt-BR')} — ${total} registros totais${errs.length?' ⚠':''}`);
+  }else{setSt(false,'Erro ao carregar dados');}
+  render();
+}
+
+async function fetchCSVRaw(url){
+  const proxies=[url,'https://corsproxy.io/?'+encodeURIComponent(url),'https://api.allorigins.win/raw?url='+encodeURIComponent(url),'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url)];
+  let lastErr='';
+  for(const u of proxies){
+    try{
+      const r=await fetch(u,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok){lastErr=`HTTP ${r.status}`;continue;}
+      const t=await r.text();
+      if(t.includes('<!DOCTYPE')||t.includes('<html')){lastErr='Resposta HTML';continue;}
+      return t;
+    }catch(e){lastErr=e.message;}
+  }
+  throw new Error(lastErr||'Todos os proxies falharam');
+}
+
+function switchTab(t,el){
+  AT=t;AF={k:'all',j:'all',reg:'all'};AR='all';
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('svcBanner').textContent=SVC_NAMES[t]||'PLANO DE AÇÃO';
+  render();
+}
+
+function switchRod(rod,el){
+  AR=rod;AF={k:'all',j:'all',reg:'all'};
+  document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// ── gf — filtro de registros ───────────────────────────────────────────────────
+function gf(){
+  if(AT==='rocada'){
+    let r=AD_ROC?.rows||[];
+    if(AR!=='all')r=r.filter(x=>x.rod===AR);
+    if(AF.reg&&AF.reg!=='all')r=r.filter(x=>x.reg===AF.reg);
+    if(AF.j&&AF.j!=='all')r=r.filter(x=>x.j===AF.j);
+    return r;
+  }
+  let r=AD[AT]?.rows||[];
+  if(AR!=='all')r=r.filter(x=>x.rod===AR);
+  if(AF.k&&AF.k!=='all')r=r.filter(x=>x.k===AF.k);
+  return r;
+}
+
+function ag(rows,key){return rows.reduce((m,r)=>{m[r[key]]=(m[r[key]]||0)+r.med;return m;},{});}
+
+function dc(){Object.values(CH).forEach(c=>{try{c.destroy();}catch(e){}}); CH={};}
+
+// ── render dispatcher ─────────────────────────────────────────────────────────
+function render(){
+  dc();
+  document.getElementById('svcBanner').textContent=SVC_NAMES[AT]||'PLANO DE AÇÃO';
+  if(AT==='mec'||AT==='man') renderSin();
+  else if(AT==='drenagem') renderDren();
+  else if(AT==='poda') renderPoda();
+  else if(AT==='rocada') renderRoc();
+  else if(AT==='disp') renderDisp();
+}
+
+function applyF(){
+  const fk=document.getElementById('fK');if(fk)AF.k=fk.value;
+  const fJ=document.getElementById('fJ');if(fJ)AF.j=fJ.value;
+  const fR=document.getElementById('fR');if(fR)AF.reg=fR.value;
+  render();
+}
+function clearF(){
+  AF={k:'all',j:'all',reg:'all'};AR='all';
+  document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
+  const first=document.querySelector('.rtab');if(first)first.classList.add('active');
+  render();
+}
+
+// ── Retigráfico com faixas por cor ────────────────────────────────────────────
+// Lógica de faixas:
+// Pista SIMPLES: crescente (bordo dir) | eixo | decrescente (bordo esq)
+// Pista DUPLA: cada sentido tem suas próprias faixas (bordo dir | eixo)
+// Cor BRANCO → bordo; Cor AMARELO → eixo (linha divisória)
+// Registros agrupados por sentido+cor → cada combo = uma faixa diferente
+
+function buildReti(id,rows){
+  const cv=document.getElementById(id);if(!cv)return;
+  const dpr=window.devicePixelRatio||1,W=cv.parentElement.offsetWidth||700;
+
+  // Calcula altura necessária por rodovia
+  const rodsU=[...new Set(rows.map(r=>r.rod))].sort();
+  const LANE_H=14,LANE_GAP=3,ROAD_LABEL=16,BLOCK_PAD=14;
+
+  // Para cada rodovia, calcula quantas faixas tem
+  function getFaixas(rod){
+    const rs=rows.filter(r=>r.rod===rod);
+    const isDupla=rs.some(r=>r.j&&r.j.toLowerCase().includes('dupla'));
+    const combos=new Set();
+    rs.forEach(r=>{
+      const senL=r.sen.toLowerCase();
+      const isCant=senL.includes('canteiro');
+      const isDec=senL.includes('dec');
+      const cor=r.k.toLowerCase().includes('amarelo')?'amarelo':'branco';
+      if(isCant){combos.add('cant');}
+      else if(isDupla){
+        // dupla: cada sentido tem bordo + eixo
+        const prefix=isDec?'dec':'cre';
+        combos.add(prefix+'_'+cor);
+      } else {
+        const prefix=isDec?'dec':'cre';
+        combos.add(prefix+'_'+cor);
+      }
+    });
+    const nLanes=Math.max(combos.size,2);
+    return{nLanes,isDupla,combos};
+  }
+
+  const rodInfo={};
+  rodsU.forEach(rod=>rodInfo[rod]=getFaixas(rod));
+  const totalLanes=rodsU.reduce((s,rod)=>s+rodInfo[rod].nLanes,0);
+  const H=Math.max(200,BLOCK_PAD*2+ROAD_LABEL*rodsU.length+totalLanes*(LANE_H+LANE_GAP)+LANE_GAP*rodsU.length*2+60);
+
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const ML=76,MR=20,MT=16,MB=46,CW=W-ML-MR,CHH=H-MT-MB;
+
+  const kms=rows.flatMap(r=>[r.kmI,r.kmF]).filter(v=>v>0);
+  if(!kms.length){ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;}
+  const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
+  const toX=km=>ML+((km-KM0)/KMR)*CW;
+
+  ctx.clearRect(0,0,W,H);
+  const step=Math.ceil(KMR/10)||1;
+  ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,MT+CHH);ctx.stroke();}
+  ctx.setLineDash([]);
+
+  // Mapa de faixa → cor visual e label
+  // branco crescente = bordo direito crescente → azul claro
+  // amarelo crescente = eixo crescente → dourado
+  // branco decrescente = bordo esquerdo decrescente → vermelho claro
+  // amarelo decrescente = eixo decrescente → laranja
+  // canteiro = verde
+
+  function getFaixaConfig(key){
+    if(key==='cant') return{cor:'#4ade80',label:'Canteiro',light:'rgba(74,222,128,0.18)'};
+    if(key==='cre_branco') return{cor:'#60a5fa',label:'Cres. — Bordo',light:'rgba(96,165,250,0.12)'};
+    if(key==='cre_amarelo') return{cor:'#e8c040',label:'Cres. — Eixo',light:'rgba(232,192,64,0.12)'};
+    if(key==='dec_branco') return{cor:'#f87171',label:'Decres. — Bordo',light:'rgba(248,113,113,0.12)'};
+    if(key==='dec_amarelo') return{cor:'#fb923c',label:'Decres. — Eixo',light:'rgba(251,146,60,0.12)'};
+    return{cor:'#a78bfa',label:key,light:'rgba(167,139,250,0.12)'};
+  }
+
+  function getRowKey(r){
+    const senL=r.sen.toLowerCase();
+    if(senL.includes('canteiro'))return'cant';
+    const prefix=senL.includes('dec')?'dec':'cre';
+    const cor=r.k.toLowerCase().includes('amarelo')?'amarelo':'branco';
+    return prefix+'_'+cor;
+  }
+
+  let yOff=MT+BLOCK_PAD;
+
+  rodsU.forEach(rod=>{
+    const rsRod=rows.filter(r=>r.rod===rod);
+    const{combos}=rodInfo[rod];
+    const orderedKeys=['cre_branco','cre_amarelo','cant','dec_amarelo','dec_branco'];
+    const keys=orderedKeys.filter(k=>combos.has(k));
+    // adicionar qualquer outro combo não mapeado
+    combos.forEach(k=>{if(!orderedKeys.includes(k))keys.push(k);});
+
+    const blockH=ROAD_LABEL+keys.length*(LANE_H+LANE_GAP);
+
+    // Fundo do bloco da rodovia
+    ctx.fillStyle='rgba(255,255,255,0.04)';
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);
+    else ctx.rect(ML,yOff,CW,blockH);
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);
+    else ctx.rect(ML,yOff,CW,blockH);
+    ctx.stroke();
+
+    // Label rodovia
+    ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
+    ctx.fillText(rod,ML-5,yOff+ROAD_LABEL/2+4);
+
+    let laneY=yOff+ROAD_LABEL;
+
+    keys.forEach(key=>{
+      const cfg=getFaixaConfig(key);
+
+      // Fundo da faixa
+      ctx.fillStyle=cfg.light;
+      ctx.fillRect(ML,laneY,CW,LANE_H);
+
+      // Label da faixa
+      ctx.fillStyle=cfg.cor;ctx.font='7px Segoe UI';ctx.textAlign='end';
+      ctx.fillText(cfg.label,ML-2,laneY+LANE_H/2+3);
+
+      // Linha separadora de faixa
+      ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.moveTo(ML,laneY);ctx.lineTo(ML+CW,laneY);ctx.stroke();
+
+      // Desenha os registros desta faixa
+      rsRod.filter(r=>getRowKey(r)===key).forEach(r=>{
+        if(!r.kmI&&!r.kmF)return;
+        const x0=toX(r.kmI),x1=toX(r.kmF),bw=Math.max(x1-x0,3);
+        ctx.fillStyle=cfg.cor+'cc';
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(x0,laneY+1,bw,LANE_H-2,2);
+        else ctx.rect(x0,laneY+1,bw,LANE_H-2);
+        ctx.fill();
+        ctx.strokeStyle=cfg.cor;ctx.lineWidth=1;
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(x0,laneY+1,bw,LANE_H-2,2);
+        else ctx.rect(x0,laneY+1,bw,LANE_H-2);
+        ctx.stroke();
+        if(bw>28){
+          ctx.fillStyle='#fff';ctx.font='bold 8px Segoe UI';ctx.textAlign='center';
+          ctx.fillText(r.k||'—',x0+bw/2,laneY+LANE_H/2+3);
+        }
+      });
+
+      laneY+=LANE_H+LANE_GAP;
+    });
+
+    yOff+=blockH+BLOCK_PAD;
+  });
+
+  // Eixo km
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ML,MT+CHH);ctx.lineTo(ML+CW,MT+CHH);ctx.stroke();
+  for(let k=KM0;k<=KM1;k+=step){
+    const x=toX(k);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,MT+CHH);ctx.lineTo(x,MT+CHH+4);ctx.stroke();
+    ctx.fillStyle='#7888c0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('km '+k.toFixed(0),x,MT+CHH+14);
+  }
+  ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('Quilometragem',ML+CW/2,H-5);
+
+  // Tooltip
+  const tt=document.getElementById('tt');
+  cv.onmousemove=function(e){
+    const rect=cv.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(W/rect.width);
+    const my=(e.clientY-rect.top)*(H/rect.height);
+    const km=KM0+((mx-ML)/CW)*KMR;
+    const hit=rows.find(r=>km>=r.kmI&&km<=r.kmF);
+    if(hit&&mx>=ML&&mx<=ML+CW){
+      const kc=hit.k.toLowerCase().includes('amarelo')?'#e8c040':'#e0e8ff';
+      const jc=hit.j.toLowerCase().includes('dupla')?'#93c5fd':'#e8c040';
+      tt.innerHTML=`<strong style="color:#e8c040">km ${hit.kmI.toFixed(3)} – ${hit.kmF.toFixed(3)}</strong><br>Serviço: ${hit.srv}<br>Sentido: ${hit.sen}<br>Rodovia: ${hit.rod} · Regional: ${hit.reg}<br>Pista: <span style="color:${jc}">${hit.j}</span> · Cor: <span style="color:${kc}">${hit.k}</span><br>Medida: <strong>${fmtBR(hit.med)} m²</strong>`;
+      tt.style.display='block';
+      const px=(e.clientX-rect.left);
+      const py=(e.clientY-rect.top);
+      tt.style.left=(px+14)+'px';
+      tt.style.top=(py-10)+'px';
+    }else tt.style.display='none';
+  };
+  cv.onmouseleave=()=>tt.style.display='none';
+}
+
+function renderSin(){
+  dc();
+  const data=AD[AT];
+  const err=ERRS[AT];
+
+  if(!data?.rows?.length){
+    let html='';
+    if(err){
+      html+=`<div class="err-box">
+        <strong>⚠ Não foi possível carregar os dados desta aba</strong>
+        Erro: ${err}<br><br>
+        <strong>Como resolver:</strong> Abra a planilha → Arquivo → Compartilhar → Publicar na Web → selecione a aba <em>"${AT==='mec'?'Sin. Horizontal_Mec.':'Sin. Horizontal_Man.'}"</em> → escolha <em>CSV</em> → clique em <em>Publicar</em>. Depois clique em ↻ Atualizar acima.
+      </div>`;
+    }
+    html+='<div class="empty">Sem dados disponíveis.</div>';
+    document.getElementById('mc').innerHTML=html;
+    return;
+  }
+
+  const rows=data.rows,un=data.hdr||'m²';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+  const kVals=[...new Set(rows.map(r=>r.k).filter(Boolean))].sort();
+  const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
+
+  const totM=rows.reduce((a,r)=>a+r.med,0);
+  const filM=fil.reduce((a,r)=>a+r.med,0);
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+  const pistaColors={'Dupla':'#60a5fa','dupla':'#60a5fa','Simples':'#e8c040','simples':'#e8c040'};
+
+  document.getElementById('mc').innerHTML=`
+  ${err?`<div class="err-box"><strong>⚠ Atenção</strong>${err}</div>`:''}
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="filters">
+    <span class="fl">Filtros:</span>
+    <select id="fK" onchange="applyF()"><option value="all">Todas as cores</option>${kVals.map(v=>`<option value="${v}"${AF.k===v?' selected':''}>${v}</option>`).join('')}</select>
+    <button class="fc" onclick="clearF()">Limpar</button>
+    <span class="fcount">${fil.length} de ${rows.length}</span>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Faixas por Cor e Sentido</div>
+    <div class="cs">
+      <span style="color:#60a5fa">■</span> Cres. Bordo &nbsp;
+      <span style="color:#e8c040">■</span> Cres. Eixo &nbsp;
+      <span style="color:#4ade80">■</span> Canteiro &nbsp;
+      <span style="color:#fb923c">■</span> Decres. Eixo &nbsp;
+      <span style="color:#f87171">■</span> Decres. Bordo
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Pista por Rodovia</div><div class="cs">Distribuição Dupla/Simples por rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>Pista</th><th>Cor</th><th style="text-align:right">${un}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildReti('reti',fil));
+
+  // Legenda por pista
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  jL.forEach((j,i)=>{const cor=pistaColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por pista por rodovia
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.med;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=pistaColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
+
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=r.j.toLowerCase().includes('dupla')?'jdupla':'jsimples';
+    const kc=r.k.toLowerCase()==='amarelo'?'kamarelo':'kbranco';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      <td><span class="bs ${kc}">${r.k}</span></td>
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
+    </tr>`;
+  });
+}
+
+
+function renderDren(){
+  dc();
+  const data=AD[AT];
+  const isSin=false;
+  const jLbl=isSin?'Pista':'Grau';
+
+  if(!data?.rows?.length){
+    document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha.</div>';
+    return;
+  }
+
+  const rows=data.rows,un=data.hdr||'m';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+  const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
+  const kVals=isSin?[...new Set(rows.map(r=>r.k).filter(Boolean))].sort():[];
+
+  // Somas apenas col F
+  const totM=rows.reduce((a,r)=>a+r.med,0);
+  const filM=fil.reduce((a,r)=>a+r.med,0);
+
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const bRR={};fil.forEach(r=>{if(!bRR[r.rod])bRR[r.rod]={};bRR[r.rod][r.reg]=(bRR[r.rod][r.reg]||0)+r.med;});
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+
+  document.getElementById('mc').innerHTML=`
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="filters">
+    <span class="fl">Filtros:</span>
+    <select id="fReg" onchange="applyF()"><option value="all">Todas as regionais</option>${regs.map(r=>`<option value="${r}"${AF.reg===r?' selected':''}>${r}</option>`).join('')}</select>
+    <select id="fJ" onchange="applyF()"><option value="all">Todos — ${jLbl}</option>${jVals.map(v=>`<option value="${v}"${AF.j===v?' selected':''}>${v}</option>`).join('')}</select>
+    ${isSin?`<select id="fK" onchange="applyF()"><option value="all">Todas as cores</option>${kVals.map(v=>`<option value="${v}"${AF.k===v?' selected':''}>${v}</option>`).join('')}</select>`:''}
+    <button class="fc" onclick="clearF()">Limpar</button>
+    <span class="fcount">${fil.length} de ${rows.length}</span>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Perfil Horizontal</div>
+    <div class="cs">${isSin?'Azul=Dupla · Dourado=Simples':'Azul=Crescente · Vermelho=Decrescente'} · Verde=Canteiro Central · Passe o mouse para detalhes</div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Grau por Rodovia</div><div class="cs">Distribuição de grau por rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>${jLbl}</th>${isSin?'<th>Cor</th>':''}<th style="text-align:right">${un}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildReti('reti',fil,isSin));
+
+  // Legenda por grau
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  const jColors={'Alto':'#f87171','Médio':'#fb923c','medio':'#fb923c','Leve':'#4ade80','leve':'#4ade80','alto':'#f87171'};
+  jL.forEach((j,i)=>{const cor=jColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por grau por rodovia
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.med;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=jColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Rosca
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
+
+  // Rodovias
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Tabela
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=isSin?(r.j.toLowerCase().includes('dupla')?'jdupla':'jsimples'):(r.j==='Alto'?'jalto':r.j.includes('dio')?'jmedio':'jleve');
+    const kc=r.k.toLowerCase()==='amarelo'?'kamarelo':'kbranco';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      ${isSin?`<td><span class="bs ${kc}">${r.k}</span></td>`:''}
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
+    </tr>`;
+  });
+}
+
+
+function renderPoda(){
+  dc();
+  const data=AD[AT];
+  const isSin=false;
+  const jLbl='Grau';
+
+  if(!data?.rows?.length){
+    document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha.</div>';
+    return;
+  }
+
+  const rows=data.rows,un=data.hdr||'m';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+  const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
+  const kVals=isSin?[...new Set(rows.map(r=>r.k).filter(Boolean))].sort():[];
+
+  // Somas apenas col F
+  const totM=rows.reduce((a,r)=>a+r.med,0);
+  const filM=fil.reduce((a,r)=>a+r.med,0);
+
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const bRR={};fil.forEach(r=>{if(!bRR[r.rod])bRR[r.rod]={};bRR[r.rod][r.reg]=(bRR[r.rod][r.reg]||0)+r.med;});
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+
+  document.getElementById('mc').innerHTML=`
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="filters">
+    <span class="fl">Filtros:</span>
+    <select id="fJ" onchange="applyF()"><option value="all">Todos os graus</option>${jVals.map(v=>`<option value="${v}"${AF.j===v?' selected':''}>${v}</option>`).join('')}</select>
+    <button class="fc" onclick="clearF()">Limpar</button>
+    <span class="fcount">${fil.length} de ${rows.length}</span>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Perfil Horizontal</div>
+    <div class="cs">Azul=Crescente · Vermelho=Decrescente · Verde=Canteiro Central · Passe o mouse para detalhes</div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Grau por Rodovia</div><div class="cs">Distribuição de grau por rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>${jLbl}</th>${isSin?'<th>Cor</th>':''}<th style="text-align:right">${un}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildReti('reti',fil,isSin));
+
+  // Legenda por grau
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  const jColors={'Alto':'#f87171','Médio':'#fb923c','medio':'#fb923c','Leve':'#4ade80','leve':'#4ade80','alto':'#f87171'};
+  jL.forEach((j,i)=>{const cor=jColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por grau por rodovia
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.med;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=jColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Rosca
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
+
+  // Rodovias
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Tabela
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=isSin?(r.j.toLowerCase().includes('dupla')?'jdupla':'jsimples'):(r.j==='Alto'?'jalto':r.j.includes('dio')?'jmedio':'jleve');
+    const kc=r.k.toLowerCase()==='amarelo'?'kamarelo':'kbranco';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      ${isSin?`<td><span class="bs ${kc}">${r.k}</span></td>`:''}
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
+    </tr>`;
+  });
+}
+
+
+function buildRetiRoc(id,rows){
+  const cv=document.getElementById(id);if(!cv)return;
+  const dpr=window.devicePixelRatio||1,W=cv.parentElement.offsetWidth||700,H=280;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const ML=72,MR=20,MT=22,MB=46,CW=W-ML-MR,CHH=H-MT-MB;
+  const kms=rows.flatMap(r=>[r.kmI,r.kmF]).filter(v=>v>0);
+  if(!kms.length){ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;}
+  const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
+  const toX=km=>ML+((km-KM0)/KMR)*CW;
+  ctx.clearRect(0,0,W,H);
+  const step=Math.ceil(KMR/10)||1;
+  ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,MT+CHH);ctx.stroke();}
+  ctx.setLineDash([]);
+
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  const nRods=rods.length;
+  const slotH=Math.floor((CHH-10)/nRods);
+  const ROAD=10,CANT=8,LANE=Math.max(10,Math.floor((slotH-ROAD-CANT-16)/2));
+
+  rods.forEach((rod,ri)=>{
+    const yBase=MT+5+ri*slotH;
+    const yMid=yBase+slotH/2;
+    ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
+    ctx.fillText(rod,ML-5,yMid+4);
+    const roadTop=yMid-ROAD/2;
+    ctx.fillStyle='rgba(255,255,255,0.09)';
+    ctx.fillRect(ML,roadTop,CW,ROAD);
+    ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.5;
+    ctx.strokeRect(ML,roadTop,CW,ROAD);
+    ctx.setLineDash([8,5]);ctx.strokeStyle='rgba(232,192,64,0.35)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ML,yMid);ctx.lineTo(ML+CW,yMid);ctx.stroke();
+    ctx.setLineDash([]);
+    const temCanteiro=rows.some(r=>r.rod===rod&&r.sen.toLowerCase().includes('canteiro'));
+    if(temCanteiro){
+      const cantH=CANT;
+      ctx.fillStyle='rgba(74,222,128,0.25)';
+      ctx.fillRect(ML,yMid-cantH/2,CW,cantH);
+      ctx.strokeStyle='rgba(74,222,128,0.5)';ctx.lineWidth=1;
+      ctx.strokeRect(ML,yMid-cantH/2,CW,cantH);
+      ctx.fillStyle='rgba(74,222,128,0.7)';ctx.font='8px Segoe UI';ctx.textAlign='center';
+      ctx.fillText('CANTEIRO',ML+CW/2,yMid+3);
+    }
+    const rowsRod=rows.filter(r=>r.rod===rod);
+    rowsRod.forEach(r=>{
+      if(!r.kmI&&!r.kmF)return;
+      const x0=toX(r.kmI),x1=toX(r.kmF),bw=Math.max(x1-x0,3);
+      const senLow=r.sen.toLowerCase();
+      const isCant=senLow.includes('canteiro');
+      const isDec=senLow.includes('dec');
+      const jColors={'Alto':'#f87171','Médio':'#fb923c','medio':'#fb923c','Leve':'#4ade80','leve':'#4ade80','alto':'#f87171'};
+      let cor,yOff,bh;
+      if(isCant){
+        cor='#4ade80';yOff=-(CANT/2+1);bh=CANT-2;
+        ctx.fillStyle=cor+'99';
+        ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,2);ctx.fill();
+        ctx.strokeStyle=cor;ctx.lineWidth=1;
+        ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,2);ctx.stroke();
+        if(bw>22){ctx.fillStyle='#fff';ctx.font='bold 9px Segoe UI';ctx.textAlign='center';ctx.fillText('↔',x0+bw/2,yMid+yOff+bh/2+3);}
+        return;
+      }
+      // Cor por grau
+      cor=jColors[r.j]||(isDec?'#f87171':'#60a5fa');
+      bh=LANE;
+      yOff=isDec?(ROAD/2+3):-(ROAD/2+bh+3);
+      ctx.fillStyle=cor+'bb';
+      ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,3);ctx.fill();
+      ctx.strokeStyle=cor;ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(x0,yMid+yOff,bw,bh,3);ctx.stroke();
+      if(bw>20){ctx.fillStyle='#fff';ctx.font='bold 10px Segoe UI';ctx.textAlign='center';ctx.fillText(isDec?'←':'→',x0+bw/2,yMid+yOff+bh/2+4);}
+    });
+    ctx.font='8px Segoe UI';ctx.textAlign='start';
+    ctx.fillStyle='#60a5fa';ctx.fillText('Crescente →',ML+3,yMid-ROAD/2-LANE-5);
+    ctx.fillStyle='#f87171';ctx.fillText('← Decrescente',ML+3,yMid+ROAD/2+LANE+12);
+    if(temCanteiro){ctx.fillStyle='#4ade80';ctx.fillText('↔ Canteiro',ML+CW/2+30,yMid+4);}
+  });
+
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ML,MT+CHH);ctx.lineTo(ML+CW,MT+CHH);ctx.stroke();
+  for(let k=KM0;k<=KM1;k+=step){
+    const x=toX(k);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,MT+CHH);ctx.lineTo(x,MT+CHH+4);ctx.stroke();
+    ctx.fillStyle='#7888c0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('km '+k.toFixed(0),x,MT+CHH+14);
+  }
+  ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('Quilometragem',ML+CW/2,H-5);
+
+  const tt=document.getElementById('tt');
+  cv.onmousemove=function(e){
+    const rect=cv.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const km=KM0+((mx-ML)/CW)*KMR;
+    const hit=rows.find(r=>km>=r.kmI&&km<=r.kmF);
+    if(hit&&mx>=ML&&mx<=ML+CW){
+      const isSen=hit.sen.toLowerCase().includes('canteiro');
+      const jc=hit.j==='Alto'?'#f87171':hit.j.includes('dio')?'#fb923c':'#4ade80';
+      tt.innerHTML=`<strong style="color:#e8c040">km ${hit.kmI.toFixed(3)} – ${hit.kmF.toFixed(3)}</strong><br>Serviço: ${hit.srv}<br>Sentido: <span style="color:${isSen?'#4ade80':hit.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa'}">${hit.sen}</span><br>Rodovia: ${hit.rod}<br>Regional: ${hit.reg}<br>Grau: <span style="color:${jc}">${hit.j}</span><br>m: <strong>${fmtBR(hit.med)} m</strong><br>m²: <strong>${fmtBR(hit.m2)} m²</strong>`;
+      tt.style.display='block';
+      tt.style.left=(mx+14)+'px';
+      tt.style.top=(e.clientY-rect.top-10)+'px';
+    }else tt.style.display='none';
+  };
+  cv.onmouseleave=()=>tt.style.display='none';
+}
+
+// ── Render principal ──────────────────────────────────────────────────────────
+
+function renderRoc(){
+  dc();
+  if(!AD_ROC?.rows?.length){
+    document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha e o gid da aba Roçada Manual.</div>';
+    return;
+  }
+
+  const rows=AD_ROC.rows;
+  const hdrM=AD_ROC.hdrM||'m';
+  const hdrK=AD_ROC.hdrK||'m²';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+  const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
+
+  // KPIs baseados na coluna K (m²)
+  const totM2=rows.reduce((a,r)=>a+r.m2,0);
+  const filM2=fil.reduce((a,r)=>a+r.m2,0);
+
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+
+  document.getElementById('mc').innerHTML=`
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${hdrK}</div><div class="kpi-value">${fmtBR(totM2)} <span>${hdrK}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${hdrK}</div><div class="kpi-value">${fmtBR(filM2)} <span>${hdrK}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="filters">
+    <span class="fl">Filtros:</span>
+    <select id="fJ" onchange="applyF()"><option value="all">Todos os graus</option>${jVals.map(v=>`<option value="${v}"${AF.j===v?' selected':''}>${v}</option>`).join('')}</select>
+    <button class="fc" onclick="clearF()">Limpar</button>
+    <span class="fcount">${fil.length} de ${rows.length}</span>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Perfil Horizontal</div>
+    <div class="cs">Verde=Leve · Laranja=Médio · Vermelho=Alto · Passe o mouse para detalhes</div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Grau por Rodovia</div><div class="cs">Distribuição de m² por grau e rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual de m²</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${hdrK} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>Grau</th><th style="text-align:right">${hdrM}</th><th style="text-align:right">${hdrK}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildRetiRoc('reti',fil));
+
+  // Legenda por grau
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  const jColors={'Alto':'#f87171','Médio':'#fb923c','medio':'#fb923c','Leve':'#4ade80','leve':'#4ade80','alto':'#f87171'};
+  jL.forEach((j,i)=>{const cor=jColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por grau por rodovia (usando m²)
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.m2;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=jColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${hdrK}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Rosca por regional (m²)
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${hdrK}`}}}}});
+
+  // Barras por rodovia (m²)
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${hdrK}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Tabela
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=r.j==='Alto'?'jalto':r.j.includes('dio')?'jmedio':'jleve';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      <td style="text-align:right;color:#a0aadd">${fmtBR(r.med)} ${hdrM}</td>
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.m2)} ${hdrK}</td>
+    </tr>`;
+  });
+}
+
+
+function renderDisp(){
+  dc();
+  const data=AD[AT];
+  const err=ERRS[AT];
+
+  if(!data?.rows?.length){
+    let html='';
+    if(err){
+      html+=`<div class="err-box">
+        <strong>⚠ Não foi possível carregar os dados</strong>
+        Erro: ${err}<br><br>
+        <strong>Como resolver:</strong> Abra a planilha → Arquivo → Compartilhar → Publicar na Web → selecione a aba <em>"a aba atual"</em> → escolha <em>CSV</em> → clique em <em>Publicar</em>. Depois cole o GID correto na variável <code>CSV_URL</code> e clique em ↻ Atualizar.
+      </div>`;
+    }
+    html+='<div class="empty">Sem dados disponíveis.</div>';
+    document.getElementById('mc').innerHTML=html;
+    return;
+  }
+
+  const rows=data.rows,un=data.hdr||'un';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+
+  const totM=rows.reduce((a,r)=>a+r.med,0);
+  const filM=fil.reduce((a,r)=>a+r.med,0);
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+  const pistaColors={'Dupla':'#60a5fa','dupla':'#60a5fa','Simples':'#e8c040','simples':'#e8c040'};
+
+  document.getElementById('mc').innerHTML=`
+  ${err?`<div class="err-box"><strong>⚠ Atenção</strong>${err}</div>`:''}
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico — Distribuição por Sentido</div>
+    <div class="cs">
+      <span style="color:#60a5fa">■</span> Cres. Bordo &nbsp;
+      <span style="color:#e8c040">■</span> Cres. Eixo &nbsp;
+      <span style="color:#4ade80">■</span> Canteiro &nbsp;
+      <span style="color:#fb923c">■</span> Decres. Eixo &nbsp;
+      <span style="color:#f87171">■</span> Decres. Bordo
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Pista por Rodovia</div><div class="cs">Distribuição Dupla/Simples por rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo — Disp. Auxiliares</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>Pista</th><th style="text-align:right">${un}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>buildReti('reti',fil));
+
+  // Legenda por pista
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  jL.forEach((j,i)=>{const cor=pistaColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por pista por rodovia
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.med;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=pistaColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
+
+  const rc2=RL.map((_,i)=>CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=r.j.toLowerCase().includes('dupla')?'jdupla':'jsimples';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
+    </tr>`;
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>
