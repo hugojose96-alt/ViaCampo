@@ -284,11 +284,13 @@ function drawReti(rod, rows){
 
   const dpr = window.devicePixelRatio||1;
   const W   = Math.max(cv.parentElement.offsetWidth||800, 600);
-  // Altura: eixo central + faixa acima (crescente) + faixa abaixo (decrescente)
-  // LANE_H=20, LANE_GAP=6 cada lado → zona de trechos = (20+6)*2 = 52px + margens
-  const ROW_H  = 50;   // altura por sentido (para cálculo do eixo central)
-  const ML=88, MR=24, MT=36, MB=44;
-  const H = MT + nS*ROW_H + MB;
+  // Altura fixa: sempre mostra crescente + eixo + decrescente
+  // yCresc = centro - 8 - 22 = centro - 30; yDec = centro + 8
+  // Canvas precisa: MT + espaço_cima(30+22) + espaço_baixo(8+22) + MB
+  const ROW_H = 60; // apenas para cálculo do centro (nS pode ser 1 ou 2)
+  const ML=88, MR=24, MT=36, MB=46;
+  // Altura total garante as duas faixas sempre visíveis
+  const H = MT + Math.max(nS, 2) * ROW_H + MB;
 
   cv.width=W*dpr; cv.height=H*dpr;
   cv.style.width=W+'px'; cv.style.height=H+'px';
@@ -335,16 +337,19 @@ function drawReti(rod, rows){
   ctx.fillStyle='#6070a0'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
   ctx.fillText('Km', ML+CW/2, MT+nS*ROW_H+28);
 
-  // O eixo tracejado fica no centro ENTRE os sentidos (meio do canvas de trechos)
-  // Cada sentido ocupa metade: crescente ACIMA do eixo, decrescente ABAIXO
-  // Se há só 1 sentido, o eixo fica na borda inferior desse sentido
-  const TOTAL_H  = nS * ROW_H;
-  const yAxisCenter = MT + TOTAL_H / 2; // linha central = eixo da rodovia
+  // Layout fixo: sempre dois slots (crescente ACIMA, decrescente ABAIXO)
+  // separados pelo eixo tracejado no centro exato do canvas de trechos
+  const LANE_H  = 22;
+  const LANE_GAP = 8; // espaço entre a faixa e o eixo central
 
-  const LANE_H = 20;
-  const LANE_GAP = 6; // gap entre a faixa e o eixo central
+  // Eixo central fixo = meio vertical do canvas de trechos
+  const yAxisCenter = MT + (nS * ROW_H) / 2;
 
-  // Eixo tracejado central da rodovia (único, entre os sentidos)
+  // Posições fixas das duas faixas
+  const yCresc = yAxisCenter - LANE_GAP - LANE_H; // acima do eixo
+  const yDec   = yAxisCenter + LANE_GAP;           // abaixo do eixo
+
+  // Eixo tracejado central (único, entre crescente e decrescente)
   ctx.save();
   ctx.setLineDash([10,6]);
   ctx.strokeStyle='#e8c040';
@@ -353,43 +358,26 @@ function drawReti(rod, rows){
   ctx.beginPath(); ctx.moveTo(ML,yAxisCenter); ctx.lineTo(ML+CW,yAxisCenter); ctx.stroke();
   ctx.restore();
 
-  // Label do eixo (esquerda, centrado verticalmente)
-  ctx.fillStyle='#e8c040'; ctx.font='bold 8px Segoe UI'; ctx.textAlign='right';
-  ctx.globalAlpha=0.7;
-  ctx.fillText('EIXO', ML-6, yAxisCenter+3);
-  ctx.globalAlpha=1;
+  // Labels fixos à esquerda
+  const labelPairs = [
+    { label: 'Crescente', yLane: yCresc, isCresc: true },
+    { label: 'Decrescente', yLane: yDec,   isCresc: false }
+  ];
 
-  // Ordena: crescente ACIMA do eixo (cresce de baixo p/ cima), decrescente ABAIXO
-  // Crescente → faixa logo acima do eixo; Decrescente → faixa logo abaixo do eixo
-  sentidos.forEach((sen, si)=>{
-    const isCresc = sen.toLowerCase().includes('cresc');
-
-    // Crescente: faixa acima do eixo (yAxisCenter - LANE_GAP - LANE_H)
-    // Decrescente: faixa abaixo do eixo (yAxisCenter + LANE_GAP)
-    // Se só 1 sentido, usa acima para crescente, abaixo para decrescente
-    let yLane;
-    if(nS === 1){
-      yLane = isCresc
-        ? yAxisCenter - LANE_GAP - LANE_H
-        : yAxisCenter + LANE_GAP;
-    } else {
-      // Com 2 sentidos: o ordenado por .sort() — crescente primeiro → si=0 fica acima
-      // Mas verificamos pelo nome para garantir
-      yLane = isCresc
-        ? yAxisCenter - LANE_GAP - LANE_H
-        : yAxisCenter + LANE_GAP;
-    }
-
-    const yMidLabel = yLane + LANE_H/2;
-
-    // Label esquerdo: nome da rodovia + sentido
+  labelPairs.forEach(({label, yLane})=>{
+    const yMid = yLane + LANE_H/2;
     ctx.fillStyle='#93c5fd'; ctx.font='bold 9px Segoe UI'; ctx.textAlign='right';
-    ctx.fillText(rod, ML-6, yMidLabel-4);
+    ctx.fillText(rod, ML-6, yMid-4);
     ctx.fillStyle='#7888c0'; ctx.font='8px Segoe UI';
-    ctx.fillText(sen, ML-6, yMidLabel+7);
+    ctx.fillText(label, ML-6, yMid+7);
+  });
 
-    // Trechos
+  // Desenha os trechos de cada sentido na faixa correta
+  sentidos.forEach(sen=>{
+    const isCresc = sen.toLowerCase().includes('cresc');
+    const yLane   = isCresc ? yCresc : yDec;
     const rowsSen = rows.filter(r=>r.sen===sen);
+
     rowsSen.forEach(row=>{
       const x1 = toX(row.kmI);
       const x2 = toX(row.kmF);
@@ -419,8 +407,10 @@ function drawReti(rod, rows){
 
   // Tooltip
   const tt = document.getElementById('tt'+uid);
-  const LANE_H_TT = 20, LANE_GAP_TT = 6;
-  const yAxisCenterTT = MT + (nS * ROW_H) / 2;
+  const _LANE_H = 22, _GAP = 8;
+  const _yAxis  = MT + Math.max(nS,2)*ROW_H/2;
+  const _yCresc = _yAxis - _GAP - _LANE_H;
+  const _yDec   = _yAxis + _GAP;
 
   cv.onmousemove = function(e){
     const rect = cv.getBoundingClientRect();
@@ -431,12 +421,10 @@ function drawReti(rod, rows){
     let found = null;
     sentidos.forEach(sen=>{
       const isCresc = sen.toLowerCase().includes('cresc');
-      const yLaneTT = isCresc
-        ? yAxisCenterTT - LANE_GAP_TT - LANE_H_TT
-        : yAxisCenterTT + LANE_GAP_TT;
-      if(my>=yLaneTT && my<=yLaneTT+LANE_H_TT){
+      const yL = isCresc ? _yCresc : _yDec;
+      if(my >= yL && my <= yL + _LANE_H){
         const r = rows.find(r=>r.sen===sen && km>=r.kmI && km<=r.kmF);
-        if(r) found=r;
+        if(r) found = r;
       }
     });
 
