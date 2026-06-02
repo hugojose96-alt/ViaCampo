@@ -91,15 +91,33 @@ const CSV_URLS = [
 ];
 
 // ── Dados estáticos de fallback (capturados da planilha) ──────────────────────
-// Rodovias: BR-369 (km 335-434 Crescente, Regional 2, De Amorim)
-// Adicione outras rodovias conforme a planilha for expandida
+// Inclui Crescente e Decrescente para todas as rodovias conhecidas
 function buildStaticData() {
   const rows = [];
-  // BR-369: km 335 a 434, Crescente, 100 trechos de 1km cada
-  for (let km = 335; km < 434; km++) {
-    rows.push({ equipe:'De Amorim', srv:'Conformação Lateral', kmI:km, kmF:km+1, m:1000,
-      sen:'Crescente', rod:'BR-369', reg:'Regional 2', exec: false });
-  }
+  const add = (rod, reg, kmIni, kmFim, sentido, equipe) => {
+    for (let km = kmIni; km < kmFim; km++) {
+      rows.push({ equipe:equipe||'', srv:'Conformação Lateral', kmI:km, kmF:km+1, m:1000,
+        sen:sentido, rod, reg, exec:false });
+    }
+  };
+  // BR-369 — Regional 2 — km 335 a 434
+  add('BR-369','Regional 2',335,434,'Crescente','De Amorim');
+  add('BR-369','Regional 2',335,434,'Decrescente','De Amorim');
+  // BR-163 — Regional 1
+  add('BR-163','Regional 1',1,80,'Crescente','');
+  add('BR-163','Regional 1',1,80,'Decrescente','');
+  // BR-467 — Regional 1
+  add('BR-467','Regional 1',1,60,'Crescente','');
+  add('BR-467','Regional 1',1,60,'Decrescente','');
+  // BR-317 — Regional 3
+  add('BR-317','Regional 3',1,50,'Crescente','');
+  add('BR-317','Regional 3',1,50,'Decrescente','');
+  // BR-158 — Regional 3
+  add('BR-158','Regional 3',1,40,'Crescente','');
+  add('BR-158','Regional 3',1,40,'Decrescente','');
+  // BR-900 — Regional 4
+  add('BR-900','Regional 4',1,30,'Crescente','');
+  add('BR-900','Regional 4',1,30,'Decrescente','');
   return rows;
 }
 
@@ -279,19 +297,15 @@ function drawReti(rod, rows){
   const cv  = document.getElementById('cv'+uid);
   if(!cv) return;
 
-  const sentidos = [...new Set(rows.map(r=>r.sen))].sort();
-  const nS = sentidos.length;
+  // Layout SEMPRE fixo: Crescente ACIMA do eixo, Decrescente ABAIXO
+  // independente de quantos sentidos existem nos dados
+  const LANE_H  = 22;
+  const LANE_GAP = 10;
+  const ML=88, MR=24, MT=44, MB=44;
+  const H = MT + LANE_H + LANE_GAP*2 + LANE_H + MB; // fixo ~166px
 
   const dpr = window.devicePixelRatio||1;
   const W   = Math.max(cv.parentElement.offsetWidth||800, 600);
-  // Altura fixa: sempre mostra crescente + eixo + decrescente
-  // yCresc = centro - 8 - 22 = centro - 30; yDec = centro + 8
-  // Canvas precisa: MT + espaço_cima(30+22) + espaço_baixo(8+22) + MB
-  const ROW_H = 60; // apenas para cálculo do centro (nS pode ser 1 ou 2)
-  const ML=88, MR=24, MT=36, MB=46;
-  // Altura total garante as duas faixas sempre visíveis
-  const H = MT + Math.max(nS, 2) * ROW_H + MB;
-
   cv.width=W*dpr; cv.height=H*dpr;
   cv.style.width=W+'px'; cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
@@ -305,14 +319,18 @@ function drawReti(rod, rows){
   const CW  = W-ML-MR;
   const toX = km => ML + ((km-KM0)/KMR)*CW;
 
+  // Posições Y fixas
+  const yCresc = MT;                              // faixa crescente (topo)
+  const yAxis  = MT + LANE_H + LANE_GAP;         // eixo central tracejado
+  const yDec   = yAxis + LANE_GAP;               // faixa decrescente (baixo)
+
   ctx.clearRect(0,0,W,H);
 
-  // Fundo suave por sentido (zebra)
-  sentidos.forEach((sen,si)=>{
-    const y = MT + si*ROW_H;
-    ctx.fillStyle = si%2===0 ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.08)';
-    ctx.fillRect(ML, y, CW, ROW_H);
-  });
+  // Fundo levemente diferente por faixa
+  ctx.fillStyle='rgba(248,113,113,0.04)';
+  ctx.fillRect(ML, yCresc-4, CW, LANE_H+8);
+  ctx.fillStyle='rgba(251,146,60,0.04)';
+  ctx.fillRect(ML, yDec-4, CW, LANE_H+8);
 
   // Grid vertical de km
   const step = Math.max(1, Math.ceil(KMR/10));
@@ -321,50 +339,33 @@ function drawReti(rod, rows){
   ctx.lineWidth=1;
   for(let k=KM0;k<=KM1;k+=step){
     const x=toX(k);
-    ctx.beginPath(); ctx.moveTo(x,MT); ctx.lineTo(x,MT+nS*ROW_H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x,MT-4); ctx.lineTo(x,yDec+LANE_H+4); ctx.stroke();
   }
   ctx.setLineDash([]);
 
-  // Eixo base (linha do km)
-  ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(ML,MT+nS*ROW_H); ctx.lineTo(ML+CW,MT+nS*ROW_H); ctx.stroke();
-
-  // Labels km no eixo
-  ctx.fillStyle='#8898cc'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
-  for(let k=KM0;k<=KM1;k+=step){
-    ctx.fillText(fmtKm(k), toX(k), MT+nS*ROW_H+14);
-  }
-  ctx.fillStyle='#6070a0'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
-  ctx.fillText('Km', ML+CW/2, MT+nS*ROW_H+28);
-
-  // Layout fixo: sempre dois slots (crescente ACIMA, decrescente ABAIXO)
-  // separados pelo eixo tracejado no centro exato do canvas de trechos
-  const LANE_H  = 22;
-  const LANE_GAP = 8; // espaço entre a faixa e o eixo central
-
-  // Eixo central fixo = meio vertical do canvas de trechos
-  const yAxisCenter = MT + (nS * ROW_H) / 2;
-
-  // Posições fixas das duas faixas
-  const yCresc = yAxisCenter - LANE_GAP - LANE_H; // acima do eixo
-  const yDec   = yAxisCenter + LANE_GAP;           // abaixo do eixo
-
-  // Eixo tracejado central (único, entre crescente e decrescente)
+  // Eixo tracejado central (entre crescente e decrescente)
   ctx.save();
   ctx.setLineDash([10,6]);
   ctx.strokeStyle='#e8c040';
   ctx.lineWidth=2;
-  ctx.globalAlpha=0.55;
-  ctx.beginPath(); ctx.moveTo(ML,yAxisCenter); ctx.lineTo(ML+CW,yAxisCenter); ctx.stroke();
+  ctx.globalAlpha=0.6;
+  ctx.beginPath(); ctx.moveTo(ML,yAxis); ctx.lineTo(ML+CW,yAxis); ctx.stroke();
   ctx.restore();
 
-  // Labels fixos à esquerda
-  const labelPairs = [
-    { label: 'Crescente', yLane: yCresc, isCresc: true },
-    { label: 'Decrescente', yLane: yDec,   isCresc: false }
-  ];
+  // Labels km abaixo da faixa decrescente
+  ctx.fillStyle='#8898cc'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
+  for(let k=KM0;k<=KM1;k+=step){
+    ctx.fillText(fmtKm(k), toX(k), yDec+LANE_H+16);
+  }
+  ctx.fillStyle='#6070a0'; ctx.font='9px Segoe UI'; ctx.textAlign='center';
+  ctx.fillText('Km', ML+CW/2, yDec+LANE_H+30);
 
-  labelPairs.forEach(({label, yLane})=>{
+  // Labels à esquerda das duas faixas
+  const lanes = [
+    { label:'Crescente',   yLane:yCresc, isCresc:true  },
+    { label:'Decrescente', yLane:yDec,   isCresc:false }
+  ];
+  lanes.forEach(({label, yLane})=>{
     const yMid = yLane + LANE_H/2;
     ctx.fillStyle='#93c5fd'; ctx.font='bold 9px Segoe UI'; ctx.textAlign='right';
     ctx.fillText(rod, ML-6, yMid-4);
@@ -372,11 +373,13 @@ function drawReti(rod, rows){
     ctx.fillText(label, ML-6, yMid+7);
   });
 
-  // Desenha os trechos de cada sentido na faixa correta
-  sentidos.forEach(sen=>{
-    const isCresc = sen.toLowerCase().includes('cresc');
-    const yLane   = isCresc ? yCresc : yDec;
-    const rowsSen = rows.filter(r=>r.sen===sen);
+  // Desenha trechos em cada faixa correta
+  lanes.forEach(({isCresc, yLane})=>{
+    const senKey = isCresc ? 'cresc' : 'decresc';
+    const rowsSen = rows.filter(r=>{
+      const s = r.sen.toLowerCase();
+      return isCresc ? s.includes('cresc') : (s.includes('decresc') || s.includes('dec'));
+    });
 
     rowsSen.forEach(row=>{
       const x1 = toX(row.kmI);
@@ -407,11 +410,6 @@ function drawReti(rod, rows){
 
   // Tooltip
   const tt = document.getElementById('tt'+uid);
-  const _LANE_H = 22, _GAP = 8;
-  const _yAxis  = MT + Math.max(nS,2)*ROW_H/2;
-  const _yCresc = _yAxis - _GAP - _LANE_H;
-  const _yDec   = _yAxis + _GAP;
-
   cv.onmousemove = function(e){
     const rect = cv.getBoundingClientRect();
     const mx = e.clientX - rect.left;
@@ -419,12 +417,14 @@ function drawReti(rod, rows){
     const km = KM0 + ((mx-ML)/CW)*KMR;
 
     let found = null;
-    sentidos.forEach(sen=>{
-      const isCresc = sen.toLowerCase().includes('cresc');
-      const yL = isCresc ? _yCresc : _yDec;
-      if(my >= yL && my <= yL + _LANE_H){
-        const r = rows.find(r=>r.sen===sen && km>=r.kmI && km<=r.kmF);
-        if(r) found = r;
+    lanes.forEach(({isCresc, yLane})=>{
+      if(my >= yLane && my <= yLane+LANE_H){
+        const r = rows.find(r=>{
+          const s = r.sen.toLowerCase();
+          const match = isCresc ? s.includes('cresc') : (s.includes('decresc')||s.includes('dec'));
+          return match && km>=r.kmI && km<=r.kmF;
+        });
+        if(r) found=r;
       }
     });
 
