@@ -584,25 +584,13 @@ function renderSin(){
     <div class="ct">Retigráfico de Execução</div>
     <div class="cs">
       <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
-      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
-      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
-      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      <span style="color:#f87171">&#9632;</span> Pendente &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Canteiro pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo
       &nbsp;· Passe o mouse para detalhes
     </div>
     <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
-  </div>
-
-  <div class="cb">
-    <div class="ct">Retigráfico — Faixas por Cor e Sentido</div>
-    <div class="cs">
-      <span style="color:#60a5fa">&#9632;</span> Cres. Bordo &nbsp;
-      <span style="color:#e8c040">&#9632;</span> Cres. Eixo &nbsp;
-      <span style="color:#4ade80">&#9632;</span> Canteiro &nbsp;
-      <span style="color:#fb923c">&#9632;</span> Decres. Eixo &nbsp;
-      <span style="color:#f87171">&#9632;</span> Decres. Bordo
-      &nbsp;· Passe o mouse para detalhes
-    </div>
-    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
   </div>
 
   <div class="g2">
@@ -632,7 +620,7 @@ function renderSin(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>{buildReti('reti',fil);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
+  requestAnimationFrame(()=>{buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por pista
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -726,18 +714,13 @@ function renderDren(){
     <div class="ct">Retigráfico de Execução</div>
     <div class="cs">
       <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
-      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
-      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
-      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      <span style="color:#f87171">&#9632;</span> Pendente &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Canteiro pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo
       &nbsp;· Passe o mouse para detalhes
     </div>
     <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
-  </div>
-
-  <div class="cb">
-    <div class="ct">Retigráfico — Perfil Horizontal</div>
-    <div class="cs">${isSin?'Azul=Dupla · Dourado=Simples':'Azul=Crescente · Vermelho=Decrescente'} · Verde=Canteiro Central · Passe o mouse para detalhes</div>
-    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
   </div>
 
   <div class="g2">
@@ -767,7 +750,7 @@ function renderDren(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>{buildReti('reti',fil,isSin);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
+  requestAnimationFrame(()=>{buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por grau
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -853,12 +836,6 @@ function renderPoda(){
     <span class="fcount">${fil.length} de ${rows.length}</span>
   </div>
 
-  <div class="cb">
-    <div class="ct">Retigráfico — Perfil Horizontal</div>
-    <div class="cs">Azul=Crescente · Vermelho=Decrescente · Verde=Canteiro Central · Passe o mouse para detalhes</div>
-    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
-  </div>
-
   <div class="g2">
     <div class="cb" style="margin-bottom:0">
       <div class="ct">Grau por Rodovia</div><div class="cs">Distribuição de grau por rodovia</div>
@@ -886,7 +863,7 @@ function renderPoda(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>{buildReti('reti',fil,isSin);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
+  requestAnimationFrame(()=>{buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por grau
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -1088,18 +1065,13 @@ function renderRoc(){
     <div class="ct">Retigráfico de Execução</div>
     <div class="cs">
       <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
-      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
-      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
-      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      <span style="color:#f87171">&#9632;</span> Pendente &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Canteiro pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo
       &nbsp;· Passe o mouse para detalhes
     </div>
     <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
-  </div>
-
-  <div class="cb">
-    <div class="ct">Retigráfico — Perfil Horizontal</div>
-    <div class="cs">Verde=Leve · Laranja=Médio · Vermelho=Alto · Passe o mouse para detalhes</div>
-    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
   </div>
 
   <div class="g2">
@@ -1129,7 +1101,7 @@ function renderRoc(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>{buildRetiRoc('reti',fil);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,AD_ROC.hdrM||'m');});
+  requestAnimationFrame(()=>{buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,AD_ROC.hdrM||'m');});
 
   // Legenda por grau
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -1223,25 +1195,13 @@ function renderDisp(){
     <div class="ct">Retigráfico de Execução</div>
     <div class="cs">
       <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
-      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
-      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
-      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      <span style="color:#f87171">&#9632;</span> Pendente &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Canteiro pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo
       &nbsp;· Passe o mouse para detalhes
     </div>
     <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
-  </div>
-
-  <div class="cb">
-    <div class="ct">Retigráfico — Distribuição por Sentido</div>
-    <div class="cs">
-      <span style="color:#60a5fa">&#9632;</span> Cres. Bordo &nbsp;
-      <span style="color:#e8c040">&#9632;</span> Cres. Eixo &nbsp;
-      <span style="color:#4ade80">&#9632;</span> Canteiro &nbsp;
-      <span style="color:#fb923c">&#9632;</span> Decres. Eixo &nbsp;
-      <span style="color:#f87171">&#9632;</span> Decres. Bordo
-      &nbsp;· Passe o mouse para detalhes
-    </div>
-    <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
   </div>
 
   <div class="g2">
@@ -1271,7 +1231,7 @@ function renderDisp(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>{buildReti('reti',fil);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
+  requestAnimationFrame(()=>{buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por pista
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -1307,74 +1267,171 @@ function renderDisp(){
 
 function buildRetiExec(id,ttId,rows){
   const cv=document.getElementById(id);if(!cv)return;
-  const LANE_H=22,LANE_GAP=10,ROAD_LABEL=16,BLOCK_PAD=14;
+  const LANE_H=18,LANE_GAP=6,ROAD_LABEL=14,CANT_H=10,BLOCK_PAD=12;
   const ML=88,MR=24,MT=16,MB=44;
   const dpr=window.devicePixelRatio||1;
   const W=Math.max(cv.parentElement.offsetWidth||800,600);
   const rodsU=[...new Set(rows.map(r=>r.rod))].sort();
-  const H=Math.max(180,MT+MB+rodsU.length*(ROAD_LABEL+2*(LANE_H+LANE_GAP)+BLOCK_PAD));
+
+  // Para cada rodovia calcula as faixas necessárias:
+  // sentidos únicos presentes (crescente, decrescente, canteiro)
+  function getRodFaixas(rod){
+    const rs=rows.filter(r=>r.rod===rod);
+    const temCres =rs.some(r=>r.sen.toLowerCase().includes('cresc'));
+    const temDec  =rs.some(r=>{const s=r.sen.toLowerCase();return(s.includes('decresc')||s.includes('dec'))&&!s.includes('cresc');});
+    const temCant =rs.some(r=>r.sen.toLowerCase().includes('canteiro'));
+    const faixas=[];
+    if(temCres) faixas.push('cresc');
+    if(temCant) faixas.push('cant');
+    if(temDec)  faixas.push('dec');
+    if(!faixas.length) faixas.push('cresc','dec'); // fallback
+    return faixas;
+  }
+
+  // Calcular altura total
+  let totalH=MT+MB+BLOCK_PAD;
+  rodsU.forEach(rod=>{
+    const faixas=getRodFaixas(rod);
+    const nFaixas=faixas.length;
+    totalH+=ROAD_LABEL+nFaixas*LANE_H+(nFaixas-1)*LANE_GAP+BLOCK_PAD;
+  });
+  const H=Math.max(180,totalH);
+
   cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
   const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+
   const kms=rows.flatMap(r=>[r.kmI,r.kmF]).filter(v=>v>0);
-  if(!kms.length){ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;}
+  if(!kms.length){
+    ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;
+  }
   const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
-  const CW=W-ML-MR;const toX=km=>ML+((km-KM0)/KMR)*CW;
+  const CW=W-ML-MR;
+  const toX=km=>ML+((km-KM0)/KMR)*CW;
+
   ctx.clearRect(0,0,W,H);
   const step=Math.max(1,Math.ceil(KMR/10));
   ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
   for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,H-MB);ctx.stroke();}
   ctx.setLineDash([]);
+
   let yOff=MT+BLOCK_PAD;
+
   rodsU.forEach(rod=>{
     const rsRod=rows.filter(r=>r.rod===rod);
-    const blockH=ROAD_LABEL+2*(LANE_H+LANE_GAP);
+    const faixas=getRodFaixas(rod);
+    const blockH=ROAD_LABEL+faixas.length*LANE_H+(faixas.length-1)*LANE_GAP;
+
+    // Fundo bloco
     ctx.fillStyle='rgba(255,255,255,0.03)';
     ctx.beginPath();if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);else ctx.rect(ML,yOff,CW,blockH);ctx.fill();
+
+    // Label rodovia
     ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
     ctx.fillText(rod,ML-5,yOff+ROAD_LABEL/2+4);
-    const yCresc=yOff+ROAD_LABEL,yDec=yCresc+LANE_H+LANE_GAP;
-    const yAxis=yCresc+LANE_H+LANE_GAP/2;
-    ctx.save();ctx.setLineDash([8,5]);ctx.strokeStyle='#e8c040';ctx.lineWidth=1.5;ctx.globalAlpha=0.5;
-    ctx.beginPath();ctx.moveTo(ML,yAxis);ctx.lineTo(ML+CW,yAxis);ctx.stroke();ctx.restore();
-    ctx.fillStyle='rgba(248,113,113,0.04)';ctx.fillRect(ML,yCresc,CW,LANE_H);
-    ctx.fillStyle='rgba(251,146,60,0.04)';ctx.fillRect(ML,yDec,CW,LANE_H);
-    ctx.fillStyle='#7888c0';ctx.font='8px Segoe UI';ctx.textAlign='end';
-    ctx.fillText('Crescente',ML-5,yCresc+LANE_H/2+3);
-    ctx.fillText('Decresc.',ML-5,yDec+LANE_H/2+3);
-    [{isCresc:true,yLane:yCresc,pendClr:'#f87171',pendBrd:'#ef4444'},{isCresc:false,yLane:yDec,pendClr:'#fb923c',pendBrd:'#ea580c'}]
-    .forEach(({isCresc,yLane,pendClr,pendBrd})=>{
-      rsRod.filter(r=>{const s=r.sen.toLowerCase();return isCresc?s.includes('cresc'):(s.includes('decresc')||s.includes('dec'));})
-      .forEach(row=>{
-        const x1=toX(row.kmI),x2=toX(row.kmF),bw=Math.max(x2-x1-0.5,1);
-        ctx.globalAlpha=row.exec?0.92:0.70;ctx.fillStyle=row.exec?'#4ade80':pendClr;
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,yLane,bw,LANE_H,2);else ctx.rect(x1,yLane,bw,LANE_H);ctx.fill();
-        ctx.globalAlpha=1;ctx.strokeStyle=row.exec?'#22c55e':pendBrd;ctx.lineWidth=0.7;
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,yLane,bw,LANE_H,2);else ctx.rect(x1,yLane,bw,LANE_H);ctx.stroke();
+
+    let laneY=yOff+ROAD_LABEL;
+
+    faixas.forEach((faixa,fi)=>{
+      const isCant=faixa==='cant';
+      const isCresc=faixa==='cresc';
+
+      // Fundo da faixa
+      if(isCant){
+        ctx.fillStyle='rgba(74,222,128,0.08)';
+      } else if(isCresc){
+        ctx.fillStyle='rgba(248,113,113,0.05)';
+      } else {
+        ctx.fillStyle='rgba(248,113,113,0.05)';
+      }
+      ctx.fillRect(ML,laneY,CW,LANE_H);
+
+      // Label faixa
+      ctx.fillStyle=isCant?'#4ade80':'#7888c0';
+      ctx.font='8px Segoe UI';ctx.textAlign='end';
+      ctx.fillText(isCant?'Canteiro':isCresc?'Crescente':'Decresc.',ML-5,laneY+LANE_H/2+3);
+
+      // Eixo tracejado (só entre crescente e decrescente, ou abaixo do canteiro)
+      if(fi===faixas.length-2||(isCant&&fi<faixas.length-1)){
+        const yLine=laneY+LANE_H+LANE_GAP/2;
+        ctx.save();ctx.setLineDash([8,5]);ctx.strokeStyle='#e8c040';ctx.lineWidth=1.2;ctx.globalAlpha=0.4;
+        ctx.beginPath();ctx.moveTo(ML,yLine);ctx.lineTo(ML+CW,yLine);ctx.stroke();ctx.restore();
+      }
+
+      // Desenha os trechos desta faixa
+      const senRows=rsRod.filter(r=>{
+        const s=r.sen.toLowerCase();
+        if(isCant) return s.includes('canteiro');
+        if(isCresc) return s.includes('cresc')&&!s.includes('canteiro');
+        return (s.includes('decresc')||s.includes('dec'))&&!s.includes('canteiro');
       });
+
+      senRows.forEach(row=>{
+        if(!row.kmI&&!row.kmF)return;
+        const x1=toX(row.kmI),x2=toX(row.kmF);
+        const bw=Math.max(x2-x1-0.5,1);
+        const clr=row.exec?'#4ade80':'#f87171';
+        const brd=row.exec?'#22c55e':'#ef4444';
+        ctx.globalAlpha=row.exec?0.92:0.72;
+        ctx.fillStyle=clr;
+        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,laneY+1,bw,LANE_H-2,2);else ctx.rect(x1,laneY+1,bw,LANE_H-2);ctx.fill();
+        ctx.globalAlpha=1;ctx.strokeStyle=brd;ctx.lineWidth=0.7;
+        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,laneY+1,bw,LANE_H-2,2);else ctx.rect(x1,laneY+1,bw,LANE_H-2);ctx.stroke();
+      });
+
+      laneY+=LANE_H+(fi<faixas.length-1?LANE_GAP:0);
     });
+
     yOff+=blockH+BLOCK_PAD;
   });
+
+  // Eixo km
   ctx.fillStyle='#8898cc';ctx.font='9px Segoe UI';ctx.textAlign='center';
   for(let k=KM0;k<=KM1;k+=step){ctx.fillText('km '+k.toFixed(0),toX(k),H-MB+16);}
-  ctx.fillStyle='#5060a0';ctx.textAlign='center';ctx.fillText('Quilometragem',ML+CW/2,H-5);
+  ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('Quilometragem',ML+CW/2,H-5);
+
+  // Tooltip
   const tt=document.getElementById(ttId);if(!tt)return;
   cv.onmousemove=function(e){
     const rect=cv.getBoundingClientRect();
     const mx=e.clientX-rect.left,my=e.clientY-rect.top;
     const km=KM0+((mx-ML)/CW)*KMR;
-    let found=null;let y2=MT+BLOCK_PAD;
+    let found=null;
+
+    // Recalcular posições Y para hit-test
+    let y2=MT+BLOCK_PAD;
     rodsU.forEach(rod=>{
-      const blockH=ROAD_LABEL+2*(LANE_H+LANE_GAP);
-      const yCresc=y2+ROAD_LABEL,yDec=yCresc+LANE_H+LANE_GAP;
       const rsRod=rows.filter(r=>r.rod===rod);
-      if(my>=yCresc&&my<yCresc+LANE_H){const h=rsRod.filter(r=>r.sen.toLowerCase().includes('cresc')).find(r=>km>=r.kmI&&km<=r.kmF);if(h)found=h;}
-      if(my>=yDec&&my<yDec+LANE_H){const h=rsRod.filter(r=>{const s=r.sen.toLowerCase();return s.includes('decresc')||s.includes('dec');}).find(r=>km>=r.kmI&&km<=r.kmF);if(h)found=h;}
+      const faixas=getRodFaixas(rod);
+      const blockH=ROAD_LABEL+faixas.length*LANE_H+(faixas.length-1)*LANE_GAP;
+      let laneY2=y2+ROAD_LABEL;
+      faixas.forEach((faixa,fi)=>{
+        if(my>=laneY2&&my<laneY2+LANE_H){
+          const isCant=faixa==='cant',isCresc=faixa==='cresc';
+          const sr=rsRod.filter(r=>{
+            const s=r.sen.toLowerCase();
+            if(isCant)return s.includes('canteiro');
+            if(isCresc)return s.includes('cresc')&&!s.includes('canteiro');
+            return(s.includes('decresc')||s.includes('dec'))&&!s.includes('canteiro');
+          });
+          const h=sr.find(r=>km>=r.kmI&&km<=r.kmF);
+          if(h)found=h;
+        }
+        laneY2+=LANE_H+(fi<faixas.length-1?LANE_GAP:0);
+      });
       y2+=blockH+BLOCK_PAD;
     });
+
     if(found&&mx>=ML&&mx<=ML+CW){
-      tt.style.display='block';tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
-      const dataObj=AT==='rocada'?AD_ROC:AD[AT];const un=dataObj?.hdr||dataObj?.hdrM||'m';
-      tt.innerHTML=`<b style="color:#93c5fd">${found.rod}</b> · ${found.sen}<br>Km <b>${found.kmI.toFixed(3)}</b> → <b>${found.kmF.toFixed(3)}</b><br>${un}: <b style="color:#e8c040">${fmtBR(found.med)}</b><br>Status: <b style="color:${found.exec?'#4ade80':'#f87171'}">${found.exec?'✔ Executado':'✘ Pendente'}</b>`;
+      tt.style.display='block';
+      tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
+      const dataObj=AT==='rocada'?AD_ROC:AD[AT];
+      const un=dataObj?.hdr||dataObj?.hdrM||'m';
+      tt.innerHTML=`<b style="color:#93c5fd">${found.rod}</b> · ${found.sen}<br>`+
+        `Km <b>${found.kmI.toFixed(3)}</b> → <b>${found.kmF.toFixed(3)}</b><br>`+
+        `${un}: <b style="color:#e8c040">${fmtBR(found.med)}</b><br>`+
+        `Status: <b style="color:${found.exec?'#4ade80':'#f87171'}">${found.exec?'✔ Executado':'✘ Pendente'}</b>`;
     }else{tt.style.display='none';}
   };
   cv.onmouseleave=()=>{if(tt)tt.style.display='none';};
