@@ -176,7 +176,7 @@ function pn(s){
 }
 
 // ── parseCSV padrão (sin, drenagem, poda, disp) ───────────────────────────────
-function parseCSV(txt){
+function parseCSV(txt,execCol){
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdr:'m²'};
   const h=sl(lines[0]);
@@ -187,7 +187,7 @@ function parseCSV(txt){
     const c=sl(lines[i]);
     const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
     if(!rod||!reg||!srv)continue;
-    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes((c[11]?.trim()||'').toLowerCase())});
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes((c[execCol!=null?execCol:11]?.trim()||'').toLowerCase())});
   }
   return{rows,hdr};
 }
@@ -247,7 +247,7 @@ async function loadAll(){
     try{
       const raw=await fetchCSVRaw(CSVS[key]);
       if(isRoc){AD_ROC=parseCSVRocada(raw);total+=AD_ROC?.rows?.length||0;}
-      else{AD[key]=parseCSV(raw);total+=AD[key]?.rows?.length||0;}
+      else{AD[key]=parseCSV(raw,(key==='mec'||key==='man')?12:11);total+=AD[key]?.rows?.length||0;}
       ERRS[key]=null;
     }catch(e){ERRS[key]=e.message;}
   }
@@ -1267,35 +1267,16 @@ function renderDisp(){
 
 function buildRetiExec(id,ttId,rows){
   const cv=document.getElementById(id);if(!cv)return;
-  const LANE_H=18,LANE_GAP=6,ROAD_LABEL=14,CANT_H=10,BLOCK_PAD=12;
-  const ML=88,MR=24,MT=16,MB=44;
-  const dpr=window.devicePixelRatio||1;
-  const W=Math.max(cv.parentElement.offsetWidth||800,600);
-  const rodsU=[...new Set(rows.map(r=>r.rod))].sort();
+  const dpr=window.devicePixelRatio||1,W=cv.parentElement.offsetWidth||700;
+  const ML=72,MR=20,MT=22,MB=46,CW=W-ML-MR;
 
-  // Para cada rodovia calcula as faixas necessárias:
-  // sentidos únicos presentes (crescente, decrescente, canteiro)
-  function getRodFaixas(rod){
-    const rs=rows.filter(r=>r.rod===rod);
-    const temCres =rs.some(r=>r.sen.toLowerCase().includes('cresc'));
-    const temDec  =rs.some(r=>{const s=r.sen.toLowerCase();return(s.includes('decresc')||s.includes('dec'))&&!s.includes('cresc');});
-    const temCant =rs.some(r=>r.sen.toLowerCase().includes('canteiro'));
-    const faixas=[];
-    if(temCres) faixas.push('cresc');
-    if(temCant) faixas.push('cant');
-    if(temDec)  faixas.push('dec');
-    if(!faixas.length) faixas.push('cresc','dec'); // fallback
-    return faixas;
-  }
-
-  // Calcular altura total
-  let totalH=MT+MB+BLOCK_PAD;
-  rodsU.forEach(rod=>{
-    const faixas=getRodFaixas(rod);
-    const nFaixas=faixas.length;
-    totalH+=ROAD_LABEL+nFaixas*LANE_H+(nFaixas-1)*LANE_GAP+BLOCK_PAD;
-  });
-  const H=Math.max(180,totalH);
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  const nRods=rods.length;
+  const ROAD=10,CANT=8,LANE=18;
+  // altura: por rodovia = ROAD + 2*LANE + CANT + margens
+  const slotH=ROAD+2*LANE+CANT+20;
+  const CHH=nRods*slotH+10;
+  const H=MT+CHH+MB;
 
   cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
   const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
@@ -1306,88 +1287,96 @@ function buildRetiExec(id,ttId,rows){
     ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;
   }
   const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
-  const CW=W-ML-MR;
   const toX=km=>ML+((km-KM0)/KMR)*CW;
 
   ctx.clearRect(0,0,W,H);
-  const step=Math.max(1,Math.ceil(KMR/10));
-  ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
-  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,H-MB);ctx.stroke();}
+  const step=Math.ceil(KMR/10)||1;
+  ctx.setLineDash([3,4]);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
+  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,MT+CHH);ctx.stroke();}
   ctx.setLineDash([]);
 
-  let yOff=MT+BLOCK_PAD;
-
-  rodsU.forEach(rod=>{
-    const rsRod=rows.filter(r=>r.rod===rod);
-    const faixas=getRodFaixas(rod);
-    const blockH=ROAD_LABEL+faixas.length*LANE_H+(faixas.length-1)*LANE_GAP;
-
-    // Fundo bloco
-    ctx.fillStyle='rgba(255,255,255,0.03)';
-    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);else ctx.rect(ML,yOff,CW,blockH);ctx.fill();
+  rods.forEach((rod,ri)=>{
+    const yBase=MT+5+ri*slotH;
+    const yMid=yBase+slotH/2;
 
     // Label rodovia
     ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
-    ctx.fillText(rod,ML-5,yOff+ROAD_LABEL/2+4);
+    ctx.fillText(rod,ML-5,yMid+4);
 
-    let laneY=yOff+ROAD_LABEL;
+    // Faixa central (rodovia)
+    const roadTop=yMid-ROAD/2;
+    ctx.fillStyle='rgba(255,255,255,0.09)';ctx.fillRect(ML,roadTop,CW,ROAD);
+    ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.5;ctx.strokeRect(ML,roadTop,CW,ROAD);
 
-    faixas.forEach((faixa,fi)=>{
-      const isCant=faixa==='cant';
-      const isCresc=faixa==='cresc';
+    // Eixo tracejado
+    ctx.setLineDash([8,5]);ctx.strokeStyle='rgba(232,192,64,0.35)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(ML,yMid);ctx.lineTo(ML+CW,yMid);ctx.stroke();
+    ctx.setLineDash([]);
 
-      // Fundo da faixa
+    // Canteiro (fundo)
+    const temCanteiro=rows.some(r=>r.rod===rod&&r.sen.toLowerCase().includes('canteiro'));
+    if(temCanteiro){
+      ctx.fillStyle='rgba(74,222,128,0.15)';ctx.fillRect(ML,yMid-CANT/2,CW,CANT);
+      ctx.strokeStyle='rgba(74,222,128,0.4)';ctx.lineWidth=0.8;ctx.strokeRect(ML,yMid-CANT/2,CW,CANT);
+      ctx.fillStyle='rgba(74,222,128,0.6)';ctx.font='8px Segoe UI';ctx.textAlign='center';
+      ctx.fillText('CANTEIRO',ML+CW/2,yMid+3);
+    }
+
+    // Trechos
+    const rowsRod=rows.filter(r=>r.rod===rod);
+    rowsRod.forEach(r=>{
+      if(!r.kmI&&!r.kmF)return;
+      const x0=toX(r.kmI),x1=toX(r.kmF),bw=Math.max(x1-x0,3);
+      const senLow=r.sen.toLowerCase();
+      const isCant=senLow.includes('canteiro');
+      const isDec=senLow.includes('dec')&&!senLow.includes('cresc');
+
+      // cor: verde se executado, vermelho se pendente
+      const cor=r.exec?'#4ade80':'#f87171';
+      const brd=r.exec?'#22c55e':'#ef4444';
+
+      let yOff,bh;
       if(isCant){
-        ctx.fillStyle='rgba(74,222,128,0.08)';
-      } else if(isCresc){
-        ctx.fillStyle='rgba(248,113,113,0.05)';
+        yOff=-(CANT/2+1);bh=CANT-2;
       } else {
-        ctx.fillStyle='rgba(248,113,113,0.05)';
-      }
-      ctx.fillRect(ML,laneY,CW,LANE_H);
-
-      // Label faixa
-      ctx.fillStyle=isCant?'#4ade80':'#7888c0';
-      ctx.font='8px Segoe UI';ctx.textAlign='end';
-      ctx.fillText(isCant?'Canteiro':isCresc?'Crescente':'Decresc.',ML-5,laneY+LANE_H/2+3);
-
-      // Eixo tracejado (só entre crescente e decrescente, ou abaixo do canteiro)
-      if(fi===faixas.length-2||(isCant&&fi<faixas.length-1)){
-        const yLine=laneY+LANE_H+LANE_GAP/2;
-        ctx.save();ctx.setLineDash([8,5]);ctx.strokeStyle='#e8c040';ctx.lineWidth=1.2;ctx.globalAlpha=0.4;
-        ctx.beginPath();ctx.moveTo(ML,yLine);ctx.lineTo(ML+CW,yLine);ctx.stroke();ctx.restore();
+        bh=LANE;
+        yOff=isDec?(ROAD/2+3):-(ROAD/2+bh+3);
       }
 
-      // Desenha os trechos desta faixa
-      const senRows=rsRod.filter(r=>{
-        const s=r.sen.toLowerCase();
-        if(isCant) return s.includes('canteiro');
-        if(isCresc) return s.includes('cresc')&&!s.includes('canteiro');
-        return (s.includes('decresc')||s.includes('dec'))&&!s.includes('canteiro');
-      });
+      ctx.globalAlpha=r.exec?0.92:0.72;
+      ctx.fillStyle=cor;
+      ctx.beginPath();
+      if(ctx.roundRect)ctx.roundRect(x0,yMid+yOff,bw,bh,2);else ctx.rect(x0,yMid+yOff,bw,bh);
+      ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.strokeStyle=brd;ctx.lineWidth=0.8;
+      ctx.beginPath();
+      if(ctx.roundRect)ctx.roundRect(x0,yMid+yOff,bw,bh,2);else ctx.rect(x0,yMid+yOff,bw,bh);
+      ctx.stroke();
 
-      senRows.forEach(row=>{
-        if(!row.kmI&&!row.kmF)return;
-        const x1=toX(row.kmI),x2=toX(row.kmF);
-        const bw=Math.max(x2-x1-0.5,1);
-        const clr=row.exec?'#4ade80':'#f87171';
-        const brd=row.exec?'#22c55e':'#ef4444';
-        ctx.globalAlpha=row.exec?0.92:0.72;
-        ctx.fillStyle=clr;
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,laneY+1,bw,LANE_H-2,2);else ctx.rect(x1,laneY+1,bw,LANE_H-2);ctx.fill();
-        ctx.globalAlpha=1;ctx.strokeStyle=brd;ctx.lineWidth=0.7;
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,laneY+1,bw,LANE_H-2,2);else ctx.rect(x1,laneY+1,bw,LANE_H-2);ctx.stroke();
-      });
-
-      laneY+=LANE_H+(fi<faixas.length-1?LANE_GAP:0);
+      if(!isCant&&bw>20){
+        ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 9px Segoe UI';ctx.textAlign='center';
+        ctx.fillText(isDec?'←':'→',x0+bw/2,yMid+yOff+bh/2+4);
+      }
     });
 
-    yOff+=blockH+BLOCK_PAD;
+    // Labels de sentido
+    ctx.font='8px Segoe UI';ctx.textAlign='start';
+    ctx.fillStyle='#a0aadd';ctx.fillText('Crescente →',ML+3,yMid-ROAD/2-LANE-4);
+    ctx.fillStyle='#a0aadd';ctx.fillText('← Decrescente',ML+3,yMid+ROAD/2+LANE+12);
+    if(temCanteiro){ctx.fillStyle='#4ade80';ctx.fillText('↔ Canteiro',ML+CW/2+30,yMid+3);}
   });
 
   // Eixo km
-  ctx.fillStyle='#8898cc';ctx.font='9px Segoe UI';ctx.textAlign='center';
-  for(let k=KM0;k<=KM1;k+=step){ctx.fillText('km '+k.toFixed(0),toX(k),H-MB+16);}
+  ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(ML,MT+CHH);ctx.lineTo(ML+CW,MT+CHH);ctx.stroke();
+  for(let k=KM0;k<=KM1;k+=step){
+    const x=toX(k);
+    ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,MT+CHH);ctx.lineTo(x,MT+CHH+4);ctx.stroke();
+    ctx.fillStyle='#7888c0';ctx.font='9px Segoe UI';ctx.textAlign='center';
+    ctx.fillText('km '+k.toFixed(0),x,MT+CHH+14);
+  }
   ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
   ctx.fillText('Quilometragem',ML+CW/2,H-5);
 
@@ -1397,41 +1386,16 @@ function buildRetiExec(id,ttId,rows){
     const rect=cv.getBoundingClientRect();
     const mx=e.clientX-rect.left,my=e.clientY-rect.top;
     const km=KM0+((mx-ML)/CW)*KMR;
-    let found=null;
-
-    // Recalcular posições Y para hit-test
-    let y2=MT+BLOCK_PAD;
-    rodsU.forEach(rod=>{
-      const rsRod=rows.filter(r=>r.rod===rod);
-      const faixas=getRodFaixas(rod);
-      const blockH=ROAD_LABEL+faixas.length*LANE_H+(faixas.length-1)*LANE_GAP;
-      let laneY2=y2+ROAD_LABEL;
-      faixas.forEach((faixa,fi)=>{
-        if(my>=laneY2&&my<laneY2+LANE_H){
-          const isCant=faixa==='cant',isCresc=faixa==='cresc';
-          const sr=rsRod.filter(r=>{
-            const s=r.sen.toLowerCase();
-            if(isCant)return s.includes('canteiro');
-            if(isCresc)return s.includes('cresc')&&!s.includes('canteiro');
-            return(s.includes('decresc')||s.includes('dec'))&&!s.includes('canteiro');
-          });
-          const h=sr.find(r=>km>=r.kmI&&km<=r.kmF);
-          if(h)found=h;
-        }
-        laneY2+=LANE_H+(fi<faixas.length-1?LANE_GAP:0);
-      });
-      y2+=blockH+BLOCK_PAD;
-    });
-
-    if(found&&mx>=ML&&mx<=ML+CW){
+    const hit=rows.find(r=>km>=r.kmI&&km<=r.kmF);
+    if(hit&&mx>=ML&&mx<=ML+CW){
       tt.style.display='block';
       tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
       const dataObj=AT==='rocada'?AD_ROC:AD[AT];
       const un=dataObj?.hdr||dataObj?.hdrM||'m';
-      tt.innerHTML=`<b style="color:#93c5fd">${found.rod}</b> · ${found.sen}<br>`+
-        `Km <b>${found.kmI.toFixed(3)}</b> → <b>${found.kmF.toFixed(3)}</b><br>`+
-        `${un}: <b style="color:#e8c040">${fmtBR(found.med)}</b><br>`+
-        `Status: <b style="color:${found.exec?'#4ade80':'#f87171'}">${found.exec?'✔ Executado':'✘ Pendente'}</b>`;
+      tt.innerHTML=`<b style="color:#93c5fd">${hit.rod}</b> · ${hit.sen}<br>`+
+        `Km <b>${hit.kmI.toFixed(3)}</b> → <b>${hit.kmF.toFixed(3)}</b><br>`+
+        `${un}: <b style="color:#e8c040">${fmtBR(hit.med)}</b><br>`+
+        `Status: <b style="color:${hit.exec?'#4ade80':'#f87171'}">${hit.exec?'✔ Executado':'✘ Pendente'}</b>`;
     }else{tt.style.display='none';}
   };
   cv.onmouseleave=()=>{if(tt)tt.style.display='none';};
