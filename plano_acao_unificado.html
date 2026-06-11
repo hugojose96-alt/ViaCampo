@@ -1405,14 +1405,46 @@ function buildRetiExec(id,ttId,rows){
   ctx.fillStyle='#5060a0';ctx.font='9px Segoe UI';ctx.textAlign='center';
   ctx.fillText('Quilometragem',ML+CW/2,H-5);
 
-  // Tooltip
+  // Tooltip — usa posição Y para identificar sentido correto antes de buscar
   const tt=document.getElementById(ttId);if(!tt)return;
   cv.onmousemove=function(e){
     const rect=cv.getBoundingClientRect();
     const mx=e.clientX-rect.left,my=e.clientY-rect.top;
     const km=KM0+((mx-ML)/CW)*KMR;
-    const hit=rows.find(r=>km>=r.kmI&&km<=r.kmF);
-    if(hit&&mx>=ML&&mx<=ML+CW){
+    if(mx<ML||mx>ML+CW){tt.style.display='none';return;}
+
+    // Recalcular posições Y de cada faixa para saber onde o mouse está
+    let hit=null;
+    let y2=MT+5;
+    rods.forEach(rod=>{
+      const yMid=y2+slotH/2;
+      const yCresc=yMid-ROAD/2-LANE-3;  // topo da faixa crescente
+      const yDec =yMid+ROAD/2+3;        // topo da faixa decrescente
+      const yCant=yMid-CANT/2;          // topo do canteiro
+
+      const rowsRod=rows.filter(r=>r.rod===rod);
+      const temCanteiro=rowsRod.some(r=>r.sen.toLowerCase().includes('canteiro'));
+
+      // Detectar em qual faixa o mouse está
+      let senFilter=null;
+      if(my>=yCresc && my<=yCresc+LANE){
+        senFilter=s=>s.includes('cresc')&&!s.includes('canteiro');
+      } else if(my>=yDec && my<=yDec+LANE){
+        senFilter=s=>(s.includes('dec'))&&!s.includes('canteiro');
+      } else if(temCanteiro && my>=yCant && my<=yCant+CANT){
+        senFilter=s=>s.includes('canteiro');
+      }
+
+      if(senFilter){
+        const candidate=rowsRod
+          .filter(r=>senFilter(r.sen.toLowerCase()))
+          .find(r=>km>=r.kmI&&km<=r.kmF);
+        if(candidate) hit=candidate;
+      }
+      y2+=slotH;
+    });
+
+    if(hit){
       tt.style.display='block';
       tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
       const dataObj=AT==='rocada'?AD_ROC:AD[AT];
