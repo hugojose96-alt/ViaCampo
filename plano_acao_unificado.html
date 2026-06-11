@@ -835,6 +835,26 @@ function renderPoda(){
     <button class="fc" onclick="clearF()">Limpar</button>
     <span class="fcount">${fil.length} de ${rows.length}</span>
   </div>
+  <div class="cb">
+    <div class="ct">Progresso por Rodovia</div>
+    <div class="cs">Percentual executado por rodovia com base na medida</div>
+    <div class="pct-grid" id="progCards"></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico de Execução</div>
+    <div class="cs">
+      <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Pendente &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Canteiro pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
+  </div>
+
+
 
   <div class="g2">
     <div class="cb" style="margin-bottom:0">
@@ -1329,7 +1349,7 @@ function buildRetiExec(id,ttId,rows){
       const x0=toX(r.kmI),x1=toX(r.kmF),bw=Math.max(x1-x0,3);
       const senLow=r.sen.toLowerCase();
       const isCant=senLow.includes('canteiro');
-      const isDec=senLow.includes('dec')&&!senLow.includes('cresc');
+      const isDec=senLow.includes('dec');
 
       // cor: verde se executado, vermelho se pendente
       const cor=r.exec?'#4ade80':'#f87171';
