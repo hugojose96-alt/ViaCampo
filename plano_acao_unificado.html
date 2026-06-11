@@ -176,18 +176,21 @@ function pn(s){
 }
 
 // ── parseCSV padrão (sin, drenagem, poda, disp) ───────────────────────────────
-function parseCSV(txt,execCol){
+function parseCSV(txt){
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdr:'m²'};
   const h=sl(lines[0]);
   const hdr=h[C.M]||'m²';
+  // Detectar coluna "Executado" pelo cabeçalho
+  const execIdx=h.findIndex(v=>v.toLowerCase().includes('executado'));
   const rows=[];
   for(let i=1;i<lines.length;i++){
     if(!lines[i].trim())continue;
     const c=sl(lines[i]);
     const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
     if(!rod||!reg||!srv)continue;
-    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes((c[execCol!=null?execCol:11]?.trim()||'').toLowerCase())});
+    const execVal=execIdx>=0?(c[execIdx]?.trim()||''):'';
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes(execVal.toLowerCase())});
   }
   return{rows,hdr};
 }
@@ -200,13 +203,15 @@ function parseCSVRocada(txt){
   const h=sl(lines[0]);
   const hdrM=h[C.M]||'m';
   const hdrK=h[C.K]||'m²';
+  const execIdxR=h.findIndex(v=>v.toLowerCase().includes('executado'));
   const rows=[];
   for(let i=1;i<lines.length;i++){
     if(!lines[i].trim())continue;
     const c=sl(lines[i]);
     const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
     if(!rod||!reg||!srv)continue;
-    rows.push({srv,med:pn(c[C.M]),m2:pn(c[C.K]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',exec:['x','X','✔','sim','yes'].includes((c[11]?.trim()||'').toLowerCase())});
+    const execValR=execIdxR>=0?(c[execIdxR]?.trim()||''):'';
+    rows.push({srv,med:pn(c[C.M]),m2:pn(c[C.K]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',exec:['x','X','✔','sim','yes'].includes(execValR.toLowerCase())});
   }
   return{rows,hdrM,hdrK};
 }
@@ -247,7 +252,7 @@ async function loadAll(){
     try{
       const raw=await fetchCSVRaw(CSVS[key]);
       if(isRoc){AD_ROC=parseCSVRocada(raw);total+=AD_ROC?.rows?.length||0;}
-      else{AD[key]=parseCSV(raw,(key==='mec'||key==='man')?12:11);total+=AD[key]?.rows?.length||0;}
+      else{AD[key]=parseCSV(raw);total+=AD[key]?.rows?.length||0;}
       ERRS[key]=null;
     }catch(e){ERRS[key]=e.message;}
   }
