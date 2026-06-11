@@ -611,7 +611,7 @@ function renderSin(){
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div class="ct">Comparativo por Regional</div><div class="cs">% executado por regional</div>
     <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
   </div>
 
@@ -639,8 +639,16 @@ function renderSin(){
   const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
   CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
 
-  const rc2=RL.map((_,i)=>CL[i%CL.length]);
-  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+  // Comparativo por Regional — % executado
+  const regsAll=[...new Set(rows.map(r=>r.reg))].sort();
+  const pctRegs=regsAll.map(reg=>{
+    const allR=rows.filter(r=>r.reg===reg);
+    const tot=allR.reduce((a,r)=>a+r.med,0);
+    const exc=allR.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    return tot?parseFloat(((exc/tot)*100).toFixed(1)):0;
+  });
+  const rc2=regsAll.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:regsAll,datasets:[{data:pctRegs,backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% executado`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{min:0,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}}}}});
 
   const tb=document.getElementById('tb');
   fil.forEach(r=>{
@@ -741,7 +749,7 @@ function renderDren(){
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div class="ct">Comparativo por Regional</div><div class="cs">% executado por regional</div>
     <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
   </div>
 
@@ -772,8 +780,16 @@ function renderDren(){
   CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
 
   // Rodovias
-  const rc2=RL.map((_,i)=>CL[i%CL.length]);
-  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+  // Comparativo por Regional — % executado
+  const regsAll=[...new Set(rows.map(r=>r.reg))].sort();
+  const pctRegs=regsAll.map(reg=>{
+    const allR=rows.filter(r=>r.reg===reg);
+    const tot=allR.reduce((a,r)=>a+r.med,0);
+    const exc=allR.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    return tot?parseFloat(((exc/tot)*100).toFixed(1)):0;
+  });
+  const rc2=regsAll.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:regsAll,datasets:[{data:pctRegs,backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% executado`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{min:0,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}}}}});
 
   // Tabela
   const tb=document.getElementById('tb');
@@ -874,7 +890,7 @@ function renderPoda(){
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div class="ct">Comparativo por Regional</div><div class="cs">% executado por regional</div>
     <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
   </div>
 
@@ -905,8 +921,16 @@ function renderPoda(){
   CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
 
   // Rodovias
-  const rc2=RL.map((_,i)=>CL[i%CL.length]);
-  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+  // Comparativo por Regional — % executado
+  const regsAll=[...new Set(rows.map(r=>r.reg))].sort();
+  const pctRegs=regsAll.map(reg=>{
+    const allR=rows.filter(r=>r.reg===reg);
+    const tot=allR.reduce((a,r)=>a+r.med,0);
+    const exc=allR.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    return tot?parseFloat(((exc/tot)*100).toFixed(1)):0;
+  });
+  const rc2=regsAll.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:regsAll,datasets:[{data:pctRegs,backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% executado`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{min:0,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}}}}});
 
   // Tabela
   const tb=document.getElementById('tb');
@@ -1112,7 +1136,7 @@ function renderRoc(){
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${hdrK} por rodovia</div>
+    <div class="ct">Comparativo por Regional</div><div class="cs">% executado por regional</div>
     <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
   </div>
 
@@ -1143,8 +1167,16 @@ function renderRoc(){
   CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${hdrK}`}}}}});
 
   // Barras por rodovia (m²)
-  const rc2=RL.map((_,i)=>CL[i%CL.length]);
-  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${hdrK}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+  // Comparativo por Regional — % executado
+  const regsAll=[...new Set(rows.map(r=>r.reg))].sort();
+  const pctRegs=regsAll.map(reg=>{
+    const allR=rows.filter(r=>r.reg===reg);
+    const tot=allR.reduce((a,r)=>a+r.med,0);
+    const exc=allR.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    return tot?parseFloat(((exc/tot)*100).toFixed(1)):0;
+  });
+  const rc2=regsAll.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:regsAll,datasets:[{data:pctRegs,backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% executado`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{min:0,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}}}}});
 
   // Tabela
   const tb=document.getElementById('tb');
@@ -1242,7 +1274,7 @@ function renderDisp(){
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Comparativo por Rodovia</div><div class="cs">Total de ${un} por rodovia</div>
+    <div class="ct">Comparativo por Regional</div><div class="cs">% executado por regional</div>
     <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
   </div>
 
@@ -1270,8 +1302,16 @@ function renderDisp(){
   const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
   CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${un}`}}}}});
 
-  const rc2=RL.map((_,i)=>CL[i%CL.length]);
-  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:RL,datasets:[{data:RL.map(r=>bRod[r]||0),backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${fmtBR(c.parsed.y)} ${un}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+  // Comparativo por Regional — % executado
+  const regsAll=[...new Set(rows.map(r=>r.reg))].sort();
+  const pctRegs=regsAll.map(reg=>{
+    const allR=rows.filter(r=>r.reg===reg);
+    const tot=allR.reduce((a,r)=>a+r.med,0);
+    const exc=allR.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    return tot?parseFloat(((exc/tot)*100).toFixed(1)):0;
+  });
+  const rc2=regsAll.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:regsAll,datasets:[{data:pctRegs,backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% executado`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{min:0,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}}}}});
 
   const tb=document.getElementById('tb');
   fil.forEach(r=>{
