@@ -71,6 +71,18 @@ tr:hover td{background:rgba(255,255,255,0.03)}
 .err-box{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.4);border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:#fca5a5;line-height:1.6}
 .err-box strong{display:block;color:#f87171;margin-bottom:4px}
 .svc-banner{background:#182060;padding:6px 28px;font-size:10px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0;color:#5060a0;transition:color .3s}
+
+.pct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:0}
+.pct-card{background:#16206a;border-radius:8px;padding:12px 14px;border:1px solid #2d38b0}
+.pct-rod{font-size:13px;font-weight:700;color:#93c5fd;margin-bottom:6px}
+.pct-bar-bg{background:#2d38b0;border-radius:4px;height:10px;overflow:hidden;margin-bottom:5px}
+.pct-bar-fill{height:100%;border-radius:4px;background:#4ade80;transition:width .6s ease}
+.pct-nums{font-size:10px;color:#a0aadd;display:flex;justify-content:space-between;margin-bottom:2px}
+.pct-pct{font-size:17px;font-weight:700;color:#4ade80}
+.reti-exec-wrap{position:relative;overflow-x:auto}
+.reti-exec-wrap::-webkit-scrollbar{height:5px}
+.reti-exec-wrap::-webkit-scrollbar-track{background:#1a2070}
+.reti-exec-wrap::-webkit-scrollbar-thumb{background:#3d48c0;border-radius:3px}
 </style>
 </head>
 <body>
@@ -175,7 +187,7 @@ function parseCSV(txt){
     const c=sl(lines[i]);
     const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
     if(!rod||!reg||!srv)continue;
-    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||''});
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes((c[11]?.trim()||'').toLowerCase())});
   }
   return{rows,hdr};
 }
@@ -194,7 +206,7 @@ function parseCSVRocada(txt){
     const c=sl(lines[i]);
     const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
     if(!rod||!reg||!srv)continue;
-    rows.push({srv,med:pn(c[C.M]),m2:pn(c[C.K]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||''});
+    rows.push({srv,med:pn(c[C.M]),m2:pn(c[C.K]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',exec:['x','X','✔','sim','yes'].includes((c[11]?.trim()||'').toLowerCase())});
   }
   return{rows,hdrM,hdrK};
 }
@@ -563,13 +575,31 @@ function renderSin(){
   </div>
 
   <div class="cb">
+    <div class="ct">Progresso por Rodovia</div>
+    <div class="cs">Percentual executado por rodovia com base na medida</div>
+    <div class="pct-grid" id="progCards"></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico de Execução</div>
+    <div class="cs">
+      <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
+      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
+  </div>
+
+  <div class="cb">
     <div class="ct">Retigráfico — Faixas por Cor e Sentido</div>
     <div class="cs">
-      <span style="color:#60a5fa">■</span> Cres. Bordo &nbsp;
-      <span style="color:#e8c040">■</span> Cres. Eixo &nbsp;
-      <span style="color:#4ade80">■</span> Canteiro &nbsp;
-      <span style="color:#fb923c">■</span> Decres. Eixo &nbsp;
-      <span style="color:#f87171">■</span> Decres. Bordo
+      <span style="color:#60a5fa">&#9632;</span> Cres. Bordo &nbsp;
+      <span style="color:#e8c040">&#9632;</span> Cres. Eixo &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro &nbsp;
+      <span style="color:#fb923c">&#9632;</span> Decres. Eixo &nbsp;
+      <span style="color:#f87171">&#9632;</span> Decres. Bordo
       &nbsp;· Passe o mouse para detalhes
     </div>
     <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
@@ -602,7 +632,7 @@ function renderSin(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>buildReti('reti',fil));
+  requestAnimationFrame(()=>{buildReti('reti',fil);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por pista
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -687,6 +717,24 @@ function renderDren(){
   </div>
 
   <div class="cb">
+    <div class="ct">Progresso por Rodovia</div>
+    <div class="cs">Percentual executado por rodovia com base na medida</div>
+    <div class="pct-grid" id="progCards"></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico de Execução</div>
+    <div class="cs">
+      <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
+      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
+  </div>
+
+  <div class="cb">
     <div class="ct">Retigráfico — Perfil Horizontal</div>
     <div class="cs">${isSin?'Azul=Dupla · Dourado=Simples':'Azul=Crescente · Vermelho=Decrescente'} · Verde=Canteiro Central · Passe o mouse para detalhes</div>
     <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
@@ -719,7 +767,7 @@ function renderDren(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>buildReti('reti',fil,isSin));
+  requestAnimationFrame(()=>{buildReti('reti',fil,isSin);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por grau
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -838,7 +886,7 @@ function renderPoda(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>buildReti('reti',fil,isSin));
+  requestAnimationFrame(()=>{buildReti('reti',fil,isSin);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por grau
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -1031,6 +1079,24 @@ function renderRoc(){
   </div>
 
   <div class="cb">
+    <div class="ct">Progresso por Rodovia</div>
+    <div class="cs">Percentual executado por rodovia com base na medida</div>
+    <div class="pct-grid" id="progCards"></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico de Execução</div>
+    <div class="cs">
+      <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
+      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
+  </div>
+
+  <div class="cb">
     <div class="ct">Retigráfico — Perfil Horizontal</div>
     <div class="cs">Verde=Leve · Laranja=Médio · Vermelho=Alto · Passe o mouse para detalhes</div>
     <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
@@ -1063,7 +1129,7 @@ function renderRoc(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>buildRetiRoc('reti',fil));
+  requestAnimationFrame(()=>{buildRetiRoc('reti',fil);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,AD_ROC.hdrM||'m');});
 
   // Legenda por grau
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -1148,13 +1214,31 @@ function renderDisp(){
   </div>
 
   <div class="cb">
+    <div class="ct">Progresso por Rodovia</div>
+    <div class="cs">Percentual executado por rodovia com base na medida</div>
+    <div class="pct-grid" id="progCards"></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico de Execução</div>
+    <div class="cs">
+      <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Crescente — pendente &nbsp;
+      <span style="color:#fb923c">&#9632;</span> Decrescente — pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo da rodovia
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
+  </div>
+
+  <div class="cb">
     <div class="ct">Retigráfico — Distribuição por Sentido</div>
     <div class="cs">
-      <span style="color:#60a5fa">■</span> Cres. Bordo &nbsp;
-      <span style="color:#e8c040">■</span> Cres. Eixo &nbsp;
-      <span style="color:#4ade80">■</span> Canteiro &nbsp;
-      <span style="color:#fb923c">■</span> Decres. Eixo &nbsp;
-      <span style="color:#f87171">■</span> Decres. Bordo
+      <span style="color:#60a5fa">&#9632;</span> Cres. Bordo &nbsp;
+      <span style="color:#e8c040">&#9632;</span> Cres. Eixo &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro &nbsp;
+      <span style="color:#fb923c">&#9632;</span> Decres. Eixo &nbsp;
+      <span style="color:#f87171">&#9632;</span> Decres. Bordo
       &nbsp;· Passe o mouse para detalhes
     </div>
     <div class="rw"><div class="tt" id="tt"></div><canvas id="reti" role="img" aria-label="Retigráfico">.</canvas></div>
@@ -1187,7 +1271,7 @@ function renderDisp(){
     </div>
   </div>`;
 
-  requestAnimationFrame(()=>buildReti('reti',fil));
+  requestAnimationFrame(()=>{buildReti('reti',fil);buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,un);});
 
   // Legenda por pista
   const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
@@ -1218,6 +1302,94 @@ function renderDisp(){
       <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
     </tr>`;
   });
+}
+
+
+function buildRetiExec(id,ttId,rows){
+  const cv=document.getElementById(id);if(!cv)return;
+  const LANE_H=22,LANE_GAP=10,ROAD_LABEL=16,BLOCK_PAD=14;
+  const ML=88,MR=24,MT=16,MB=44;
+  const dpr=window.devicePixelRatio||1;
+  const W=Math.max(cv.parentElement.offsetWidth||800,600);
+  const rodsU=[...new Set(rows.map(r=>r.rod))].sort();
+  const H=Math.max(180,MT+MB+rodsU.length*(ROAD_LABEL+2*(LANE_H+LANE_GAP)+BLOCK_PAD));
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const kms=rows.flatMap(r=>[r.kmI,r.kmF]).filter(v=>v>0);
+  if(!kms.length){ctx.fillStyle='#5060a0';ctx.font='12px Segoe UI';ctx.textAlign='center';ctx.fillText('Sem dados de km disponíveis',W/2,H/2);return;}
+  const KM0=Math.floor(Math.min(...kms)),KM1=Math.ceil(Math.max(...kms)),KMR=KM1-KM0||1;
+  const CW=W-ML-MR;const toX=km=>ML+((km-KM0)/KMR)*CW;
+  ctx.clearRect(0,0,W,H);
+  const step=Math.max(1,Math.ceil(KMR/10));
+  ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1;
+  for(let k=KM0;k<=KM1;k+=step){const x=toX(k);ctx.beginPath();ctx.moveTo(x,MT);ctx.lineTo(x,H-MB);ctx.stroke();}
+  ctx.setLineDash([]);
+  let yOff=MT+BLOCK_PAD;
+  rodsU.forEach(rod=>{
+    const rsRod=rows.filter(r=>r.rod===rod);
+    const blockH=ROAD_LABEL+2*(LANE_H+LANE_GAP);
+    ctx.fillStyle='rgba(255,255,255,0.03)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(ML,yOff,CW,blockH,4);else ctx.rect(ML,yOff,CW,blockH);ctx.fill();
+    ctx.fillStyle='#93c5fd';ctx.font='bold 10px Segoe UI';ctx.textAlign='end';
+    ctx.fillText(rod,ML-5,yOff+ROAD_LABEL/2+4);
+    const yCresc=yOff+ROAD_LABEL,yDec=yCresc+LANE_H+LANE_GAP;
+    const yAxis=yCresc+LANE_H+LANE_GAP/2;
+    ctx.save();ctx.setLineDash([8,5]);ctx.strokeStyle='#e8c040';ctx.lineWidth=1.5;ctx.globalAlpha=0.5;
+    ctx.beginPath();ctx.moveTo(ML,yAxis);ctx.lineTo(ML+CW,yAxis);ctx.stroke();ctx.restore();
+    ctx.fillStyle='rgba(248,113,113,0.04)';ctx.fillRect(ML,yCresc,CW,LANE_H);
+    ctx.fillStyle='rgba(251,146,60,0.04)';ctx.fillRect(ML,yDec,CW,LANE_H);
+    ctx.fillStyle='#7888c0';ctx.font='8px Segoe UI';ctx.textAlign='end';
+    ctx.fillText('Crescente',ML-5,yCresc+LANE_H/2+3);
+    ctx.fillText('Decresc.',ML-5,yDec+LANE_H/2+3);
+    [{isCresc:true,yLane:yCresc,pendClr:'#f87171',pendBrd:'#ef4444'},{isCresc:false,yLane:yDec,pendClr:'#fb923c',pendBrd:'#ea580c'}]
+    .forEach(({isCresc,yLane,pendClr,pendBrd})=>{
+      rsRod.filter(r=>{const s=r.sen.toLowerCase();return isCresc?s.includes('cresc'):(s.includes('decresc')||s.includes('dec'));})
+      .forEach(row=>{
+        const x1=toX(row.kmI),x2=toX(row.kmF),bw=Math.max(x2-x1-0.5,1);
+        ctx.globalAlpha=row.exec?0.92:0.70;ctx.fillStyle=row.exec?'#4ade80':pendClr;
+        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,yLane,bw,LANE_H,2);else ctx.rect(x1,yLane,bw,LANE_H);ctx.fill();
+        ctx.globalAlpha=1;ctx.strokeStyle=row.exec?'#22c55e':pendBrd;ctx.lineWidth=0.7;
+        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x1,yLane,bw,LANE_H,2);else ctx.rect(x1,yLane,bw,LANE_H);ctx.stroke();
+      });
+    });
+    yOff+=blockH+BLOCK_PAD;
+  });
+  ctx.fillStyle='#8898cc';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  for(let k=KM0;k<=KM1;k+=step){ctx.fillText('km '+k.toFixed(0),toX(k),H-MB+16);}
+  ctx.fillStyle='#5060a0';ctx.textAlign='center';ctx.fillText('Quilometragem',ML+CW/2,H-5);
+  const tt=document.getElementById(ttId);if(!tt)return;
+  cv.onmousemove=function(e){
+    const rect=cv.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    const km=KM0+((mx-ML)/CW)*KMR;
+    let found=null;let y2=MT+BLOCK_PAD;
+    rodsU.forEach(rod=>{
+      const blockH=ROAD_LABEL+2*(LANE_H+LANE_GAP);
+      const yCresc=y2+ROAD_LABEL,yDec=yCresc+LANE_H+LANE_GAP;
+      const rsRod=rows.filter(r=>r.rod===rod);
+      if(my>=yCresc&&my<yCresc+LANE_H){const h=rsRod.filter(r=>r.sen.toLowerCase().includes('cresc')).find(r=>km>=r.kmI&&km<=r.kmF);if(h)found=h;}
+      if(my>=yDec&&my<yDec+LANE_H){const h=rsRod.filter(r=>{const s=r.sen.toLowerCase();return s.includes('decresc')||s.includes('dec');}).find(r=>km>=r.kmI&&km<=r.kmF);if(h)found=h;}
+      y2+=blockH+BLOCK_PAD;
+    });
+    if(found&&mx>=ML&&mx<=ML+CW){
+      tt.style.display='block';tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
+      const dataObj=AT==='rocada'?AD_ROC:AD[AT];const un=dataObj?.hdr||dataObj?.hdrM||'m';
+      tt.innerHTML=`<b style="color:#93c5fd">${found.rod}</b> · ${found.sen}<br>Km <b>${found.kmI.toFixed(3)}</b> → <b>${found.kmF.toFixed(3)}</b><br>${un}: <b style="color:#e8c040">${fmtBR(found.med)}</b><br>Status: <b style="color:${found.exec?'#4ade80':'#f87171'}">${found.exec?'✔ Executado':'✘ Pendente'}</b>`;
+    }else{tt.style.display='none';}
+  };
+  cv.onmouseleave=()=>{if(tt)tt.style.display='none';};
+}
+
+function buildProgCards(rows,un){
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  return rods.map(rod=>{
+    const allRod=rows.filter(r=>r.rod===rod);
+    const totR=allRod.reduce((a,r)=>a+r.med,0);
+    const execR=allRod.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    const pct=totR?((execR/totR)*100):0;
+    const ne=allRod.filter(r=>r.exec).length;
+    return `<div class="pct-card"><div class="pct-rod">${rod}</div><div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${Math.min(pct,100).toFixed(1)}%"></div></div><div class="pct-nums"><span>${fmtBR(execR)} ${un} exec. / ${fmtBR(totR)} ${un} total</span><span>${ne}/${allRod.length}</span></div><div class="pct-pct">${pct.toFixed(1)}%</div></div>`;
+  }).join('');
 }
 
 loadAll();
