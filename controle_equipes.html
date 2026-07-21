@@ -152,6 +152,14 @@ async function loadAll(){
     document.getElementById('sDot').className='dot';
     document.getElementById('sTxt').textContent=`Conectado — ${registros.length} registros · ${Object.keys(master).length} equipes no quadro · atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
     render();
+
+    // Painel de debug: mostra a fonte usada e as primeiras linhas cruas do CSV
+    const dbg=document.createElement('div');
+    dbg.className='cb';
+    dbg.innerHTML=`<div class="ct">Debug — dados brutos recebidos</div>
+      <div class="cs">${lines.length} linhas no total · primeiras 6 linhas abaixo (cada campo separado por " | ")</div>
+      <div class="tw" style="max-height:200px"><pre style="white-space:pre-wrap;font-size:10px;color:#a0aadd;margin:0">${lines.slice(0,6).map((l,i)=>`[${i}] `+sl(l).map((c,j)=>`(${j})${c}`).join(' | ')).join('\n')}</pre></div>`;
+    document.getElementById('mc').appendChild(dbg);
   }catch(err){
     document.getElementById('sDot').className='dot err';
     document.getElementById('sTxt').textContent='Erro ao carregar: '+err.message;
