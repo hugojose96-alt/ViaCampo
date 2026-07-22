@@ -169,27 +169,27 @@ async function loadAll(){
 
 function compute(){
   const {master,registros}=AD;
-  const stats={}; // nomeCanonico -> {regional,total,divergente,faltando:{oficial,lider,ajudante},sobrando:{...}}
+  const stats={}; // nomeCanonico -> {regional,total,divergente,faltando:{oficial,lider,ajudante}} — divergente considera só faltas
   const faltas=[]; // detalhamento
 
   registros.forEach(r=>{
     const mm=master[norm(r.equipe)];
     if(!mm)return;
     const canon=mm.nome;
-    if(!stats[canon])stats[canon]={regional:regional(canon),total:0,divergente:0,faltando:{oficial:0,lider:0,ajudante:0},sobrando:{oficial:0,lider:0,ajudante:0}};
+    if(!stats[canon])stats[canon]={regional:regional(canon),total:0,divergente:0,faltando:{oficial:0,lider:0,ajudante:0}};
     const st=stats[canon];
     st.total++;
-    let anyDif=false;
+    let anyFalta=false;
     ROLES.forEach(ro=>{
       const real=r[ro.k], esp=mm[ro.k];
+      // Só conta como divergência quando falta gente (real < esperado).
+      // Efetivo acima do esperado (sobra) é ignorado — não é tratado como problema.
       if(real<esp){
-        anyDif=true; st.faltando[ro.k]++;
+        anyFalta=true; st.faltando[ro.k]++;
         faltas.push({dataStr:r.dataStr,dataObj:r.dataObj,equipe:canon,regional:regional(canon),role:ro.lbl,roleCls:ro.cls,real,esp,faltando:esp-real,serial:r.serial});
-      }else if(real>esp){
-        anyDif=true; st.sobrando[ro.k]++;
       }
     });
-    if(anyDif)st.divergente++;
+    if(anyFalta)st.divergente++;
   });
 
   faltas.sort((a,b)=>b.dataObj-a.dataObj || a.equipe.localeCompare(b.equipe));
