@@ -20,7 +20,7 @@ body{background:#1a2070;font-family:'Segoe UI',sans-serif;color:#fff;min-height:
 .status-text{color:#a0aadd}
 .refresh-btn{margin-left:auto;background:rgba(232,192,64,0.15);color:#e8c040;border:1px solid rgba(232,192,64,0.4);border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:'Segoe UI',sans-serif;font-weight:600}
 .refresh-btn:hover{background:rgba(232,192,64,0.28)}
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
 .kpi{background:#1e277a;border-radius:9px;padding:12px 14px;border:1px solid #3d48c0}
 .kpi-label{font-size:10px;color:#a0aadd;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
 .kpi-value{font-size:21px;font-weight:700;color:#fff}
@@ -59,7 +59,7 @@ tr:hover td{background:rgba(255,255,255,0.03)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .footer{text-align:center;padding:8px;font-size:11px;color:#8898cc;border-top:1px solid #2d38b0;margin-top:4px;letter-spacing:.5px}
 .empty{text-align:center;padding:30px;color:#5060a0;font-size:13px}
-@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(1,1fr)}.g2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -202,7 +202,6 @@ function render(){
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Meta Total (Col. F)</div><div class="kpi-value">${fmtBR(totalMeta)} <span>${UN}</span></div><div class="kpi-badge bp">${base.length} registros</div></div>
     <div class="kpi"><div class="kpi-label">Executado Reg 1+2</div><div class="kpi-value">${fmtBR(executadoR12)} <span>${UN}</span></div><div class="kpi-badge bb">${fmtPct(pctR12)} do total</div></div>
-    <div class="kpi"><div class="kpi-label">Outras Equipes</div><div class="kpi-value">${fmtBR(outrasSum)} <span>${UN}</span></div><div class="kpi-badge bn">${fmtPct(pctOutras)} do total</div></div>
     <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(pendente)} <span>${UN}</span></div><div class="kpi-badge br">${fmtPct(pctPend)} do total</div></div>
   </div>
 
@@ -215,11 +214,6 @@ function render(){
       <div class="ct">Reg 1 · Atual vs Reg 2 · Atual</div><div class="cs">Comparativo entre as duas equipes principais</div>
       <div style="position:relative;height:230px"><canvas id="cReg">.</canvas></div>
     </div>
-  </div>
-
-  <div class="cb">
-    <div class="ct">Outras Equipes</div><div class="cs">Metros executados por demais equipes (fora Reg 1/Reg 2 - Atual)</div>
-    <div style="position:relative;height:${Math.max(160,outrasLabels.length*34)}px">${outrasLabels.length?`<canvas id="cOutras">.</canvas>`:`<div class="empty">Nenhum registro de outras equipes no filtro atual.</div>`}</div>
   </div>
 
   <div class="cb">
@@ -249,8 +243,8 @@ function render(){
 
   // Pizza — distribuição geral
   CH.pizza=new Chart(document.getElementById('cPizza'),{type:'doughnut',data:{
-    labels:['Reg 1 - Atual','Reg 2 - Atual','Outras Equipes','A Executar'],
-    datasets:[{data:[reg1,reg2,outrasSum,pendente],backgroundColor:[COL_R1+'cc',COL_R2+'cc',COL_OUT+'cc',COL_PEND+'cc'],borderColor:[COL_R1,COL_R2,COL_OUT,COL_PEND],borderWidth:1.5}]
+    labels:['Reg 1 - Atual','Reg 2 - Atual','A Executar'],
+    datasets:[{data:[reg1,reg2,pendente],backgroundColor:[COL_R1+'cc',COL_R2+'cc',COL_PEND+'cc'],borderColor:[COL_R1,COL_R2,COL_PEND],borderWidth:1.5}]
   },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>{const v=c.parsed,p=totalMeta?v/totalMeta*100:0;return `${c.label}: ${fmtBR(v)} ${UN} (${fmtPct(p)})`;}}}}}});
 
   // Barras Reg1 vs Reg2
@@ -258,15 +252,6 @@ function render(){
     labels:['Reg 1 - Atual','Reg 2 - Atual'],
     datasets:[{data:[reg1,reg2],backgroundColor:[COL_R1+'cc',COL_R2+'cc'],borderColor:[COL_R1,COL_R2],borderWidth:1.5,borderRadius:6,barThickness:60}]
   },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.parsed.y,p=totalMeta?v/totalMeta*100:0;return `${fmtBR(v)} ${UN} (${fmtPct(p)} do total)`;}}}},scales:{x:{ticks:{color:TC,font:{size:12,weight:'600'}},grid:{display:false}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
-
-  // Barras outras equipes (horizontal)
-  if(outrasLabels.length){
-    const cores=outrasLabels.map((_,i)=>CL[i%CL.length]);
-    CH.outras=new Chart(document.getElementById('cOutras'),{type:'bar',data:{
-      labels:outrasLabels,
-      datasets:[{data:outrasLabels.map(l=>outras[l]),backgroundColor:cores.map(c=>c+'cc'),borderColor:cores,borderWidth:1.5,borderRadius:5}]
-    },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.parsed.x,p=totalMeta?v/totalMeta*100:0;return `${fmtBR(v)} ${UN} (${fmtPct(p)} do total)`;}}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true},y:{ticks:{color:TC,font:{size:11}},grid:{display:false}}}}});
-  }
 
   // Barras por rodovia — Reg1 vs Reg2 (todas as rodovias)
   const RL=rodsAll;
@@ -283,7 +268,6 @@ function render(){
   const linhasEq=[
     {nome:'Reg 1 - Atual',v:reg1,cls:'r1',cor:COL_R1},
     {nome:'Reg 2 - Atual',v:reg2,cls:'r2',cor:COL_R2},
-    ...outrasLabels.map((l,i)=>({nome:l,v:outras[l],cls:'ro',cor:CL[i%CL.length]})),
     {nome:'A Executar (sem equipe)',v:pendente,cls:'rp',cor:COL_PEND}
   ];
   tbEq.innerHTML=linhasEq.map(l=>{
