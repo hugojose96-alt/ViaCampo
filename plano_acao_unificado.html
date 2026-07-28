@@ -130,10 +130,19 @@ const CSVS={
   mec:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=206273543&single=true&output=csv',
   man:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=457075190&single=true&output=csv',
   drenagem:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=269296572&single=true&output=csv',
+  drenrec:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=123734875&single=true&output=csv',
+  drenprof:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1161897361&single=true&output=csv',
   poda:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1033014728&single=true&output=csv',
   rocada:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=795251438&single=true&output=csv',
   disp:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1193100781&single=true&output=csv'
 };
+
+// ── Sub-abas de Drenagem ──────────────────────────────────────────────────────
+const DRAIN_KEYS={sup:'drenagem',rec:'drenrec',prof:'drenprof'};
+const DRAIN_LABELS={sup:'Drenagem Superficial',rec:'Recuperação de Drenagem',prof:'Drenagem Profunda'};
+const DRAIN_BANNERS={sup:'LIMPEZA DE DRENAGEM SUPERFICIAL — DADOS AO VIVO',rec:'RECUPERAÇÃO DE DRENAGEM — DADOS AO VIVO',prof:'DRENAGEM PROFUNDA — DADOS AO VIVO'};
+let DT='sup';
+function curKey(){return AT==='drenagem'?DRAIN_KEYS[DT]:AT;}
 
 const SVC_NAMES={
   mec:'SINALIZAÇÃO HORIZONTAL — MECÂNICO — DADOS AO VIVO',
@@ -145,9 +154,9 @@ const SVC_NAMES={
 };
 
 const C={S:2,KI:3,KF:4,M:5,SE:6,RO:7,RE:8,J:9,K:10};
-let AD={mec:null,man:null,drenagem:null,poda:null,disp:null};
+let AD={mec:null,man:null,drenagem:null,drenrec:null,drenprof:null,poda:null,disp:null};
 let AD_ROC=null;
-let ERRS={mec:null,man:null,drenagem:null,poda:null,rocada:null,disp:null};
+let ERRS={mec:null,man:null,drenagem:null,drenrec:null,drenprof:null,poda:null,rocada:null,disp:null};
 let CH={},AT='mec',AF={k:'all',j:'all',reg:'all'};
 let AR='all';
 const CL=['#60a5fa','#e8c040','#4ade80','#f87171','#a78bfa','#fb923c'];
@@ -246,7 +255,7 @@ function setSt(ok,msg){
 async function loadAll(){
   setSt(true,'Carregando...');
   document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
-  const keys=[['mec',false],['man',false],['drenagem',false],['poda',false],['rocada',true],['disp',false]];
+  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false],['rocada',true],['disp',false]];
   let total=0;
   for(const [key,isRoc] of keys){
     try{
@@ -278,11 +287,24 @@ async function fetchCSVRaw(url){
   throw new Error(lastErr||'Todos os proxies falharam');
 }
 
+function bannerText(){
+  if(AT==='drenagem')return DRAIN_BANNERS[DT]||'PLANO DE AÇÃO';
+  return SVC_NAMES[AT]||'PLANO DE AÇÃO';
+}
+
 function switchTab(t,el){
-  AT=t;AF={k:'all',j:'all',reg:'all'};AR='all';
+  AT=t;AF={k:'all',j:'all',reg:'all'};AR='all';DT='sup';
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('svcBanner').textContent=SVC_NAMES[t]||'PLANO DE AÇÃO';
+  document.getElementById('svcBanner').textContent=bannerText();
+  render();
+}
+
+function switchDrenTab(dt,el){
+  DT=dt;AF={k:'all',j:'all',reg:'all'};AR='all';
+  document.querySelectorAll('.dtab').forEach(x=>x.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('svcBanner').textContent=bannerText();
   render();
 }
 
@@ -302,7 +324,7 @@ function gf(){
     if(AF.j&&AF.j!=='all')r=r.filter(x=>x.j===AF.j);
     return r;
   }
-  let r=AD[AT]?.rows||[];
+  let r=AD[curKey()]?.rows||[];
   if(AR!=='all')r=r.filter(x=>x.rod===AR);
   if(AF.k&&AF.k!=='all')r=r.filter(x=>x.k===AF.k);
   return r;
@@ -315,7 +337,7 @@ function dc(){Object.values(CH).forEach(c=>{try{c.destroy();}catch(e){}}); CH={}
 // ── render dispatcher ─────────────────────────────────────────────────────────
 function render(){
   dc();
-  document.getElementById('svcBanner').textContent=SVC_NAMES[AT]||'PLANO DE AÇÃO';
+  document.getElementById('svcBanner').textContent=bannerText();
   if(AT==='mec'||AT==='man') renderSin();
   else if(AT==='drenagem') renderDren();
   else if(AT==='poda') renderPoda();
@@ -671,12 +693,29 @@ function renderSin(){
 
 function renderDren(){
   dc();
-  const data=AD[AT];
+  const dk=curKey();
+  const data=AD[dk];
+  const err=ERRS[dk];
   const isSin=false;
   const jLbl=isSin?'Pista':'Grau';
 
+  const drenTabsHtml=`
+  <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Tipo de Drenagem:</span>
+    ${Object.keys(DRAIN_KEYS).map(k=>`<button class="dtab${DT===k?' active':''}" onclick="switchDrenTab('${k}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${DT===k?'#2B34A0':'transparent'};color:${DT===k?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${DRAIN_LABELS[k]}</button>`).join('')}
+  </div>`;
+
   if(!data?.rows?.length){
-    document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha.</div>';
+    let html=drenTabsHtml;
+    if(err){
+      html+=`<div class="err-box">
+        <strong>⚠ Não foi possível carregar os dados desta aba</strong>
+        Erro: ${err}<br><br>
+        <strong>Como resolver:</strong> Abra a planilha → Arquivo → Compartilhar → Publicar na Web → selecione a aba <em>"${DRAIN_LABELS[DT]}"</em> → escolha <em>CSV</em> → clique em <em>Publicar</em>. Depois clique em ↻ Atualizar acima.
+      </div>`;
+    }
+    html+='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha.</div>';
+    document.getElementById('mc').innerHTML=html;
     return;
   }
 
@@ -691,15 +730,25 @@ function renderDren(){
   // Somas apenas col F
   const totM=rows.reduce((a,r)=>a+r.med,0);
   const filM=fil.reduce((a,r)=>a+r.med,0);
+  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+  const totPend=totM-totExec;
+  const pctExecTotal=totM?(totExec/totM*100):0;
+  const pctPendTotal=totM?(totPend/totM*100):0;
 
   const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
   const bRR={};fil.forEach(r=>{if(!bRR[r.rod])bRR[r.rod]={};bRR[r.rod][r.reg]=(bRR[r.rod][r.reg]||0)+r.med;});
   const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
 
   document.getElementById('mc').innerHTML=`
+  ${err?`<div class="err-box"><strong>⚠ Atenção</strong>${err}</div>`:''}
+  ${drenTabsHtml}
   <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
     <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
     ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${un}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${un}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
   </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
@@ -1487,7 +1536,7 @@ function buildRetiExec(id,ttId,rows){
     if(hit){
       tt.style.display='block';
       tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
-      const dataObj=AT==='rocada'?AD_ROC:AD[AT];
+      const dataObj=AT==='rocada'?AD_ROC:AD[curKey()];
       const un=dataObj?.hdr||dataObj?.hdrM||'m';
       tt.innerHTML=`<b style="color:#93c5fd">${hit.rod}</b> · ${hit.sen}<br>`+
         `Km <b>${hit.kmI.toFixed(3)}</b> → <b>${hit.kmF.toFixed(3)}</b><br>`+
