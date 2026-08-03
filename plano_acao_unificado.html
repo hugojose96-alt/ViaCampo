@@ -263,8 +263,8 @@ async function loadAll(){
   document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
   // execCol: índice 0-based da coluna "Executado" quando o cabeçalho não usa a palavra "executado"
   // Poda de Árvores e Disp. Auxiliares → coluna L (índice 11)
-  // Cerca a Cerca (antiga Roçada Manual) → ainda sem coluna de Executado na planilha (sem fallback por enquanto)
-  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true],['disp',false,11]];
+  // Cerca a Cerca → coluna M (índice 12), comparada com a coluna K (m²)
+  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true,12],['disp',false,11]];
   let total=0;
   for(const [key,isRoc,execCol] of keys){
     try{
@@ -1144,14 +1144,13 @@ function renderRoc(){
   const regs=[...new Set(rows.map(r=>r.reg))].sort();
   const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
 
-  // KPIs baseados na coluna K (m²)
+  // KPIs baseados na coluna K (m²) — Executado/A Executar comparam com a coluna M (executado)
   const totM2=rows.reduce((a,r)=>a+r.m2,0);
   const filM2=fil.reduce((a,r)=>a+r.m2,0);
-  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
-  const totMTotal=rows.reduce((a,r)=>a+r.med,0);
-  const totPend=totMTotal-totExec;
-  const pctExecTotal=totMTotal?(totExec/totMTotal*100):0;
-  const pctPendTotal=totMTotal?(totPend/totMTotal*100):0;
+  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.m2,0);
+  const totPend=totM2-totExec;
+  const pctExecTotal=totM2?(totExec/totM2*100):0;
+  const pctPendTotal=totM2?(totPend/totM2*100):0;
 
   const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
   const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
@@ -1162,8 +1161,8 @@ function renderRoc(){
     ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
   </div>
   <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
-    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${hdrM}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
-    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${hdrM}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${hdrK}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${hdrK}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
   </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Total ${hdrK}</div><div class="kpi-value">${fmtBR(totM2)} <span>${hdrK}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
