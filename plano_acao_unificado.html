@@ -107,6 +107,8 @@ tr:hover td{background:rgba(255,255,255,0.03)}
   <div class="tab-sep"></div>
   <div class="tab" onclick="switchTab('rocada',this)">Roçada Manual</div>
   <div class="tab-sep"></div>
+  <div class="tab" onclick="switchTab('cerca',this)">Cerca a Cerca</div>
+  <div class="tab-sep"></div>
   <div class="tab" onclick="switchTab('disp',this)">Disp. Auxiliares</div>
 </div>
 
@@ -134,6 +136,7 @@ const CSVS={
   drenprof:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1161897361&single=true&output=csv',
   poda:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1033014728&single=true&output=csv',
   rocada:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=795251438&single=true&output=csv',
+  cerca:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=795251438&single=true&output=csv',
   disp:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1193100781&single=true&output=csv'
 };
 
@@ -150,13 +153,15 @@ const SVC_NAMES={
   drenagem:'LIMPEZA DE DRENAGEM SUPERFICIAL — DADOS AO VIVO',
   poda:'PODA DE ÁRVORES — DADOS AO VIVO',
   rocada:'ROÇADA MANUAL — DADOS AO VIVO',
+  cerca:'CERCA A CERCA — DADOS AO VIVO',
   disp:'DISPOSITIVOS AUXILIARES — DADOS AO VIVO'
 };
 
 const C={S:2,KI:3,KF:4,M:5,SE:6,RO:7,RE:8,J:9,K:10};
 let AD={mec:null,man:null,drenagem:null,drenrec:null,drenprof:null,poda:null,disp:null};
 let AD_ROC=null;
-let ERRS={mec:null,man:null,drenagem:null,drenrec:null,drenprof:null,poda:null,rocada:null,disp:null};
+let AD_CERCA=null;
+let ERRS={mec:null,man:null,drenagem:null,drenrec:null,drenprof:null,poda:null,rocada:null,cerca:null,disp:null};
 let CH={},AT='mec',AF={k:'all',j:'all',reg:'all'};
 let AR='all';
 const CL=['#60a5fa','#e8c040','#4ade80','#f87171','#a78bfa','#fb923c'];
@@ -185,13 +190,16 @@ function pn(s){
 }
 
 // ── parseCSV padrão (sin, drenagem, poda, disp) ───────────────────────────────
-function parseCSV(txt){
+// execColOverride: índice (0-based) da coluna "Executado" a usar caso o cabeçalho
+// não contenha explicitamente a palavra "executado" (ex.: coluna L = índice 11).
+function parseCSV(txt,execColOverride){
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdr:'m²'};
   const h=sl(lines[0]);
   const hdr=h[C.M]||'m²';
-  // Detectar coluna "Executado" pelo cabeçalho
-  const execIdx=h.findIndex(v=>v.toLowerCase().includes('executado'));
+  // Detectar coluna "Executado" pelo cabeçalho; se não encontrar, usa o fallback informado
+  let execIdx=h.findIndex(v=>v.toLowerCase().includes('executado'));
+  if(execIdx<0 && typeof execColOverride==='number')execIdx=execColOverride;
   const rows=[];
   for(let i=1;i<lines.length;i++){
     if(!lines[i].trim())continue;
@@ -205,14 +213,17 @@ function parseCSV(txt){
 }
 
 // ── parseCSV roçada (tem colunas m2 e med) ────────────────────────────────────
-function parseCSVRocada(txt){
+// execColOverride: índice (0-based) da coluna "Executado" a usar caso o cabeçalho
+// não contenha explicitamente a palavra "executado" (ex.: coluna M = índice 12).
+function parseCSVRocada(txt,execColOverride){
 
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdrM:'m',hdrK:'m²'};
   const h=sl(lines[0]);
   const hdrM=h[C.M]||'m';
   const hdrK=h[C.K]||'m²';
-  const execIdxR=h.findIndex(v=>v.toLowerCase().includes('executado'));
+  let execIdxR=h.findIndex(v=>v.toLowerCase().includes('executado'));
+  if(execIdxR<0 && typeof execColOverride==='number')execIdxR=execColOverride;
   const rows=[];
   for(let i=1;i<lines.length;i++){
     if(!lines[i].trim())continue;
@@ -255,13 +266,20 @@ function setSt(ok,msg){
 async function loadAll(){
   setSt(true,'Carregando...');
   document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
-  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false],['rocada',true],['disp',false]];
+  // execCol: índice 0-based da coluna "Executado" quando o cabeçalho não usa a palavra "executado"
+  // Poda de Árvores e Disp. Auxiliares → coluna L (índice 11)
+  // Cerca a Cerca → coluna M (índice 12)
+  // Roçada Manual → ainda sem coluna de Executado na planilha (sem fallback por enquanto)
+  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true],['cerca',true,12],['disp',false,11]];
   let total=0;
-  for(const [key,isRoc] of keys){
+  for(const [key,isRoc,execCol] of keys){
     try{
       const raw=await fetchCSVRaw(CSVS[key]);
-      if(isRoc){AD_ROC=parseCSVRocada(raw);total+=AD_ROC?.rows?.length||0;}
-      else{AD[key]=parseCSV(raw);total+=AD[key]?.rows?.length||0;}
+      if(isRoc){
+        if(key==='rocada'){AD_ROC=parseCSVRocada(raw,execCol);total+=AD_ROC?.rows?.length||0;}
+        else{AD_CERCA=parseCSVRocada(raw,execCol);total+=AD_CERCA?.rows?.length||0;}
+      }
+      else{AD[key]=parseCSV(raw,execCol);total+=AD[key]?.rows?.length||0;}
       ERRS[key]=null;
     }catch(e){ERRS[key]=e.message;}
   }
@@ -324,6 +342,13 @@ function gf(){
     if(AF.j&&AF.j!=='all')r=r.filter(x=>x.j===AF.j);
     return r;
   }
+  if(AT==='cerca'){
+    let r=AD_CERCA?.rows||[];
+    if(AR!=='all')r=r.filter(x=>x.rod===AR);
+    if(AF.reg&&AF.reg!=='all')r=r.filter(x=>x.reg===AF.reg);
+    if(AF.j&&AF.j!=='all')r=r.filter(x=>x.j===AF.j);
+    return r;
+  }
   let r=AD[curKey()]?.rows||[];
   if(AR!=='all')r=r.filter(x=>x.rod===AR);
   if(AF.k&&AF.k!=='all')r=r.filter(x=>x.k===AF.k);
@@ -342,6 +367,7 @@ function render(){
   else if(AT==='drenagem') renderDren();
   else if(AT==='poda') renderPoda();
   else if(AT==='rocada') renderRoc();
+  else if(AT==='cerca') renderCerca();
   else if(AT==='disp') renderDisp();
 }
 
@@ -882,6 +908,10 @@ function renderPoda(){
   // Somas apenas col F
   const totM=rows.reduce((a,r)=>a+r.med,0);
   const filM=fil.reduce((a,r)=>a+r.med,0);
+  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+  const totPend=totM-totExec;
+  const pctExecTotal=totM?(totExec/totM*100):0;
+  const pctPendTotal=totM?(totPend/totM*100):0;
 
   const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
   const bRR={};fil.forEach(r=>{if(!bRR[r.rod])bRR[r.rod]={};bRR[r.rod][r.reg]=(bRR[r.rod][r.reg]||0)+r.med;});
@@ -891,6 +921,10 @@ function renderPoda(){
   <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
     <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
     ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${un}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${un}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
   </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
@@ -1130,6 +1164,11 @@ function renderRoc(){
   // KPIs baseados na coluna K (m²)
   const totM2=rows.reduce((a,r)=>a+r.m2,0);
   const filM2=fil.reduce((a,r)=>a+r.m2,0);
+  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+  const totMTotal=rows.reduce((a,r)=>a+r.med,0);
+  const totPend=totMTotal-totExec;
+  const pctExecTotal=totMTotal?(totExec/totMTotal*100):0;
+  const pctPendTotal=totMTotal?(totPend/totMTotal*100):0;
 
   const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
   const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
@@ -1138,6 +1177,10 @@ function renderRoc(){
   <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
     <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
     ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${hdrM}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${hdrM}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
   </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Total ${hdrK}</div><div class="kpi-value">${fmtBR(totM2)} <span>${hdrK}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
@@ -1245,6 +1288,148 @@ function renderRoc(){
   });
 }
 
+function renderCerca(){
+  dc();
+  if(!AD_CERCA?.rows?.length){
+    document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha e o gid da aba Cerca a Cerca.</div>';
+    return;
+  }
+
+  const rows=AD_CERCA.rows;
+  const hdrM=AD_CERCA.hdrM||'m';
+  const hdrK=AD_CERCA.hdrK||'m²';
+  const rods=[...new Set(rows.map(r=>r.rod))].sort();
+  if(AR==='all'&&rods.length)AR=rods[0];
+  const fil=gf();
+  const regs=[...new Set(rows.map(r=>r.reg))].sort();
+  const jVals=[...new Set(rows.map(r=>r.j).filter(Boolean))].sort();
+
+  // KPIs baseados na coluna K (m²)
+  const totM2=rows.reduce((a,r)=>a+r.m2,0);
+  const filM2=fil.reduce((a,r)=>a+r.m2,0);
+  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+  const totMTotal=rows.reduce((a,r)=>a+r.med,0);
+  const totPend=totMTotal-totExec;
+  const pctExecTotal=totMTotal?(totExec/totMTotal*100):0;
+  const pctPendTotal=totMTotal?(totPend/totMTotal*100):0;
+
+  const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
+  const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
+
+  document.getElementById('mc').innerHTML=`
+  <div class="rod-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:#a0aadd;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;margin-right:4px">Rodovia:</span>
+    ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
+  </div>
+  <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${hdrM}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${hdrM}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total ${hdrK}</div><div class="kpi-value">${fmtBR(totM2)} <span>${hdrK}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Filtrado ${hdrK}</div><div class="kpi-value">${fmtBR(filM2)} <span>${hdrK}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
+    <div class="kpi"><div class="kpi-label">Rodovias</div><div class="kpi-value">${rods.length} <span>rodovias</span></div><div class="kpi-badge bn">${rods.join(', ')}</div></div>
+    <div class="kpi"><div class="kpi-label">Regionais</div><div class="kpi-value">${regs.length} <span>regionais</span></div><div class="kpi-badge bp">${regs.join(' · ')}</div></div>
+  </div>
+
+  <div class="filters">
+    <span class="fl">Filtros:</span>
+    <select id="fJ" onchange="applyF()"><option value="all">Todos os graus</option>${jVals.map(v=>`<option value="${v}"${AF.j===v?' selected':''}>${v}</option>`).join('')}</select>
+    <button class="fc" onclick="clearF()">Limpar</button>
+    <span class="fcount">${fil.length} de ${rows.length}</span>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Progresso por Rodovia</div>
+    <div class="cs">Percentual executado por rodovia com base na medida</div>
+    <div class="pct-grid" id="progCards"></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Retigráfico de Execução</div>
+    <div class="cs">
+      <span style="color:#4ade80">&#9632;</span> Executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Pendente &nbsp;
+      <span style="color:#4ade80">&#9632;</span> Canteiro executado &nbsp;
+      <span style="color:#f87171">&#9632;</span> Canteiro pendente &nbsp;
+      <span style="color:#e8c040">— —</span> Eixo
+      &nbsp;· Passe o mouse para detalhes
+    </div>
+    <div class="reti-exec-wrap"><div class="tt" id="tt-exec"></div><canvas id="cv-exec"></canvas></div>
+  </div>
+
+  <div class="g2">
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Grau por Rodovia</div><div class="cs">Distribuição de m² por grau e rodovia</div>
+      <div class="leg" id="leg1"></div>
+      <div style="position:relative;height:200px"><canvas id="cRR">.</canvas></div>
+    </div>
+    <div class="cb" style="margin-bottom:0">
+      <div class="ct">Proporção por Regional</div><div class="cs">Distribuição percentual de m²</div>
+      <div style="position:relative;height:200px"><canvas id="cPie">.</canvas></div>
+    </div>
+  </div>
+
+  <div class="cb" style="margin-top:12px">
+    <div class="ct">Comparativo por Regional</div><div class="cs">% executado por regional</div>
+    <div style="position:relative;height:160px"><canvas id="cRod">.</canvas></div>
+  </div>
+
+  <div class="cb">
+    <div class="ct">Detalhamento Completo</div><div class="cs">Tabela com scroll — ${fil.length} registros filtrados</div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Rodovia</th><th>Regional</th><th>Serviço</th><th>Sentido</th><th>km Ini</th><th>km Fin</th><th>Grau</th><th style="text-align:right">${hdrM}</th><th style="text-align:right">${hdrK}</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>{buildRetiExec('cv-exec','tt-exec',fil);const pcEl=document.getElementById('progCards');if(pcEl)pcEl.innerHTML=buildProgCards(rows,AD_CERCA.hdrM||'m');});
+
+  // Legenda por grau
+  const jL=[...new Set(fil.map(r=>r.j).filter(Boolean))].sort();
+  const leg1=document.getElementById('leg1');
+  const jColors={'Alto':'#f87171','Médio':'#fb923c','medio':'#fb923c','Leve':'#4ade80','leve':'#4ade80','alto':'#f87171'};
+  jL.forEach((j,i)=>{const cor=jColors[j]||CL[i%CL.length];leg1.innerHTML+=`<span><span class="ld" style="background:${cor}"></span>${j}</span>`;});
+
+  // Barras agrupadas por grau por rodovia (usando m²)
+  const bRRJ={};fil.forEach(r=>{if(!bRRJ[r.rod])bRRJ[r.rod]={};bRRJ[r.rod][r.j]=(bRRJ[r.rod][r.j]||0)+r.m2;});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:RL,datasets:jL.map((j,i)=>{const cor=jColors[j]||CL[i%CL.length];return{label:j,data:RL.map(r=>bRRJ[r]?.[j]||0),backgroundColor:cor+'cc',borderColor:cor,borderWidth:1.5,borderRadius:4};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmtBR(c.parsed.y)} ${hdrK}`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true}}}});
+
+  // Rosca por regional (m²)
+  const rc=reL.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:reL,datasets:[{data:reL.map(r=>bReg[r]||0),backgroundColor:rc.map(c=>c+'cc'),borderColor:rc,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtBR(c.parsed)} ${hdrK}`}}}}});
+
+  // Comparativo por Regional — % executado
+  const regsAll=[...new Set(rows.map(r=>r.reg))].sort();
+  const pctRegs=regsAll.map(reg=>{
+    const allR=rows.filter(r=>r.reg===reg);
+    const tot=allR.reduce((a,r)=>a+r.med,0);
+    const exc=allR.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+    return tot?parseFloat(((exc/tot)*100).toFixed(1)):0;
+  });
+  const rc2=regsAll.map((r,i)=>CR[r]||CL[i%CL.length]);
+  CH.rod=new Chart(document.getElementById('cRod'),{type:'bar',data:{labels:regsAll,datasets:[{data:pctRegs,backgroundColor:rc2.map(c=>c+'cc'),borderColor:rc2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(1)}% executado`}}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{min:0,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}}}}});
+
+  // Tabela
+  const tb=document.getElementById('tb');
+  fil.forEach(r=>{
+    const rc=r.reg==='Regional 1'?'r1':r.reg==='Regional 2'?'r2':'r3';
+    const jc=r.j==='Alto'?'jalto':r.j.includes('dio')?'jmedio':'jleve';
+    const senColor=r.sen.toLowerCase().includes('canteiro')?'#4ade80':r.sen.toLowerCase().includes('dec')?'#f87171':'#60a5fa';
+    tb.innerHTML+=`<tr>
+      <td><span class="bs ${rc}">${r.rod}</span></td>
+      <td>${r.reg}</td><td>${r.srv}</td>
+      <td><span style="color:${senColor}">${r.sen}</span></td>
+      <td>${r.kmI.toFixed(3)}</td><td>${r.kmF.toFixed(3)}</td>
+      <td><span class="bs ${jc}">${r.j}</span></td>
+      <td style="text-align:right;color:#a0aadd">${fmtBR(r.med)} ${hdrM}</td>
+      <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.m2)} ${hdrK}</td>
+    </tr>`;
+  });
+}
+
 
 function renderDisp(){
   dc();
@@ -1273,6 +1458,10 @@ function renderDisp(){
 
   const totM=rows.reduce((a,r)=>a+r.med,0);
   const filM=fil.reduce((a,r)=>a+r.med,0);
+  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+  const totPend=totM-totExec;
+  const pctExecTotal=totM?(totExec/totM*100):0;
+  const pctPendTotal=totM?(totPend/totM*100):0;
   const bRod=ag(fil,'rod'),bReg=ag(fil,'reg');
   const RL=Object.keys(bRod).sort(),reL=[...new Set(fil.map(r=>r.reg))].sort();
   const pistaColors={'Dupla':'#60a5fa','dupla':'#60a5fa','Simples':'#e8c040','simples':'#e8c040'};
@@ -1284,6 +1473,10 @@ function renderDisp(){
     ${rods.map(r=>`<button class="rtab${AR===r?' active':''}" onclick="switchRod('${r}',this)" style="padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;border-radius:6px;border:1px solid #4d5cd0;background:${AR===r?'#2B34A0':'transparent'};color:${AR===r?'#e8c040':'#7888c0'};transition:all .2s;font-family:'Segoe UI',sans-serif">${r}</button>`).join('')}
   </div>
 
+  <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+    <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(totExec)} <span>${un}</span></div><div class="kpi-badge bn">${pctExecTotal.toFixed(1)}% do total</div></div>
+    <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(totPend)} <span>${un}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPendTotal.toFixed(1)}% do total</div></div>
+  </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Total ${un}</div><div class="kpi-value">${fmtBR(totM)} <span>${un}</span></div><div class="kpi-badge bb">${rows.length} registros</div></div>
     <div class="kpi"><div class="kpi-label">Filtrado ${un}</div><div class="kpi-value">${fmtBR(filM)} <span>${un}</span></div><div class="kpi-badge bg">${fil.length} registros</div></div>
@@ -1536,7 +1729,7 @@ function buildRetiExec(id,ttId,rows){
     if(hit){
       tt.style.display='block';
       tt.style.left=Math.min(mx+14,W-220)+'px';tt.style.top=Math.max(my-60,4)+'px';
-      const dataObj=AT==='rocada'?AD_ROC:AD[curKey()];
+      const dataObj=AT==='rocada'?AD_ROC:AT==='cerca'?AD_CERCA:AD[curKey()];
       const un=dataObj?.hdr||dataObj?.hdrM||'m';
       tt.innerHTML=`<b style="color:#93c5fd">${hit.rod}</b> · ${hit.sen}<br>`+
         `Km <b>${hit.kmI.toFixed(3)}</b> → <b>${hit.kmF.toFixed(3)}</b><br>`+
