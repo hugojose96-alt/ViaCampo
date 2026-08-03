@@ -1466,7 +1466,7 @@ function renderDisp(){
 
 
 // ── renderIndic — aba "Indicadores": valores únicos de células específicas ───
-function indicCardBlock(title,subtitle,ind,unit,errMsg){
+function indicCardBlock(title,ind,unit,errMsg){
   const total=ind.total||0,exec=ind.exec||0;
   const pend=total-exec;
   const pctExec=total?(exec/total*100):0;
@@ -1474,7 +1474,6 @@ function indicCardBlock(title,subtitle,ind,unit,errMsg){
   return `
   <div class="cb">
     <div class="ct">${title}</div>
-    <div class="cs">${subtitle}</div>
     ${errMsg?`<div class="err-box"><strong>⚠ Não foi possível carregar os dados</strong>Erro: ${errMsg}</div>`:''}
     <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
       <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(exec)} <span>${unit}</span></div><div class="kpi-badge bn">${pctExec.toFixed(1)}% do total</div></div>
@@ -1490,8 +1489,8 @@ function renderIndic(){
   dc();
   document.getElementById('mc').innerHTML=`
   <div class="g2">
-    ${indicCardBlock('Sinalização Vertical','Indicador direto da planilha — Total: coluna K, linha 4 · Executado: coluna Q, linha 2',IND.sinvert,'m²',IND.sinvert.err)}
-    ${indicCardBlock('Roçada Manual','Indicador direto da planilha — Total: coluna A, linha 2 · Executado: coluna C, linha 2',IND.rm,'m²',IND.rm.err)}
+    ${indicCardBlock('Sinalização Vertical',IND.sinvert,'m²',IND.sinvert.err)}
+    ${indicCardBlock('Roçada Manual',IND.rm,'m²',IND.rm.err)}
   </div>`;
 }
 
