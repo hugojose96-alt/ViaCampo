@@ -108,6 +108,8 @@ tr:hover td{background:rgba(255,255,255,0.03)}
   <div class="tab" onclick="switchTab('rocada',this)">Cerca a Cerca</div>
   <div class="tab-sep"></div>
   <div class="tab" onclick="switchTab('disp',this)">Disp. Auxiliares</div>
+  <div class="tab-sep"></div>
+  <div class="tab" onclick="switchTab('indic',this)">Indicadores</div>
 </div>
 
 <div class="body">
@@ -134,7 +136,9 @@ const CSVS={
   drenprof:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1161897361&single=true&output=csv',
   poda:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1033014728&single=true&output=csv',
   rocada:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=795251438&single=true&output=csv',
-  disp:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1193100781&single=true&output=csv'
+  disp:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1193100781&single=true&output=csv',
+  sinvert:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=355476349&single=true&output=csv',
+  rm:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIH_aAgMAgTnZIFe7mEFx2WxNrZhytatBF5mSveVmhYKLRiq88LXYMQr9RggAnBSwseN-2t-AXPJTi/pub?gid=1625955258&single=true&output=csv'
 };
 
 // ── Sub-abas de Drenagem ──────────────────────────────────────────────────────
@@ -150,7 +154,8 @@ const SVC_NAMES={
   drenagem:'LIMPEZA DE DRENAGEM SUPERFICIAL — DADOS AO VIVO',
   poda:'PODA DE ÁRVORES — DADOS AO VIVO',
   rocada:'CERCA A CERCA — DADOS AO VIVO',
-  disp:'DISPOSITIVOS AUXILIARES — DADOS AO VIVO'
+  disp:'DISPOSITIVOS AUXILIARES — DADOS AO VIVO',
+  indic:'INDICADORES — DADOS AO VIVO'
 };
 
 const C={S:2,KI:3,KF:4,M:5,SE:6,RO:7,RE:8,J:9,K:10};
@@ -184,7 +189,32 @@ function pn(s){
   return parseFloat(c)||0;
 }
 
-// ── parseCSV padrão (sin, drenagem, poda, disp) ───────────────────────────────
+// ── parseGrid — leitura de células específicas (indicadores simples) ─────────
+// Retorna uma matriz de linhas x colunas (0-based) a partir do texto CSV bruto.
+function parseGrid(txt){
+  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  return lines.map(l=>sl(l));
+}
+// getCell(grid, linha1based, colunaLetra) — lê o valor de uma célula pela
+// referência humana (linha 1-based, coluna por letra "A","K","Q"...).
+function colLetterToIdx(letter){
+  let n=0;
+  for(let i=0;i<letter.length;i++)n=n*26+(letter.toUpperCase().charCodeAt(i)-64);
+  return n-1;
+}
+function getCell(grid,row1,colLetter){
+  const r=grid[row1-1];
+  if(!r)return '';
+  return r[colLetterToIdx(colLetter)]||'';
+}
+
+// Indicadores simples (célula única), usados na aba "Indicadores"
+let IND={
+  sinvert:{total:0,exec:0,err:null},
+  rm:{total:0,exec:0,err:null}
+};
+
+
 // execColOverride: índice (0-based) da coluna "Executado" a usar caso o cabeçalho
 // não contenha explicitamente a palavra "executado" (ex.: coluna L = índice 11).
 // execQtyCol: índice (0-based) de uma coluna numérica que já traz a quantidade
@@ -281,6 +311,23 @@ async function loadAll(){
     }catch(e){ERRS[key]=e.message;}
   }
   const errs=Object.entries(ERRS).filter(([,v])=>v);
+
+  // ── Indicadores simples (célula única): Sin. Vertical e RM ──────────────────
+  try{
+    const rawSV=await fetchCSVRaw(CSVS.sinvert);
+    const gridSV=parseGrid(rawSV);
+    IND.sinvert.total=pn(getCell(gridSV,4,'K'));
+    IND.sinvert.exec=pn(getCell(gridSV,2,'Q'));
+    IND.sinvert.err=null;
+  }catch(e){IND.sinvert.err=e.message;}
+  try{
+    const rawRM=await fetchCSVRaw(CSVS.rm);
+    const gridRM=parseGrid(rawRM);
+    IND.rm.total=pn(getCell(gridRM,2,'A'));
+    IND.rm.exec=pn(getCell(gridRM,2,'C'));
+    IND.rm.err=null;
+  }catch(e){IND.rm.err=e.message;}
+
   if(total>0){
     setSt(errs.length===0,`Atualizado ${new Date().toLocaleTimeString('pt-BR')} — ${total} registros totais${errs.length?' ⚠':''}`);
   }else{setSt(false,'Erro ao carregar dados');}
@@ -358,6 +405,7 @@ function render(){
   else if(AT==='poda') renderPoda();
   else if(AT==='rocada') renderRoc();
   else if(AT==='disp') renderDisp();
+  else if(AT==='indic') renderIndic();
 }
 
 function applyF(){
@@ -1414,6 +1462,37 @@ function renderDisp(){
       <td style="text-align:right;font-weight:600;color:#e8c040">${fmtBR(r.med)} ${un}</td>
     </tr>`;
   });
+}
+
+
+// ── renderIndic — aba "Indicadores": valores únicos de células específicas ───
+function indicCardBlock(title,subtitle,ind,unit,errMsg){
+  const total=ind.total||0,exec=ind.exec||0;
+  const pend=total-exec;
+  const pctExec=total?(exec/total*100):0;
+  const pctPend=total?(pend/total*100):0;
+  return `
+  <div class="cb">
+    <div class="ct">${title}</div>
+    <div class="cs">${subtitle}</div>
+    ${errMsg?`<div class="err-box"><strong>⚠ Não foi possível carregar os dados</strong>Erro: ${errMsg}</div>`:''}
+    <div class="kpi-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+      <div class="kpi"><div class="kpi-label">Executado</div><div class="kpi-value">${fmtBR(exec)} <span>${unit}</span></div><div class="kpi-badge bn">${pctExec.toFixed(1)}% do total</div></div>
+      <div class="kpi"><div class="kpi-label">A Executar</div><div class="kpi-value">${fmtBR(pend)} <span>${unit}</span></div><div class="kpi-badge br" style="background:rgba(248,113,113,0.15);color:#f87171">${pctPend.toFixed(1)}% do total</div></div>
+    </div>
+    <div class="kpi-row" style="grid-template-columns:1fr">
+      <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value">${fmtBR(total)} <span>${unit}</span></div></div>
+    </div>
+  </div>`;
+}
+
+function renderIndic(){
+  dc();
+  document.getElementById('mc').innerHTML=`
+  <div class="g2">
+    ${indicCardBlock('Sinalização Vertical','Indicador direto da planilha — Total: coluna K, linha 4 · Executado: coluna Q, linha 2',IND.sinvert,'un',IND.sinvert.err)}
+    ${indicCardBlock('RM','Indicador direto da planilha — Total: coluna A, linha 2 · Executado: coluna C, linha 2',IND.rm,'un',IND.rm.err)}
+  </div>`;
 }
 
 
