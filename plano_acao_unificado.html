@@ -187,7 +187,9 @@ function pn(s){
 // ── parseCSV padrão (sin, drenagem, poda, disp) ───────────────────────────────
 // execColOverride: índice (0-based) da coluna "Executado" a usar caso o cabeçalho
 // não contenha explicitamente a palavra "executado" (ex.: coluna L = índice 11).
-function parseCSV(txt,execColOverride){
+// execQtyCol: índice (0-based) de uma coluna numérica que já traz a quantidade
+// executada por linha (ex.: coluna N = índice 13, usada em Disp. Auxiliares).
+function parseCSV(txt,execColOverride,execQtyCol){
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdr:'m²'};
   const h=sl(lines[0]);
@@ -202,7 +204,8 @@ function parseCSV(txt,execColOverride){
     const rod=c[C.RO]||'',reg=c[C.RE]||'',srv=c[C.S]||'';
     if(!rod||!reg||!srv)continue;
     const execVal=execIdx>=0?(c[execIdx]?.trim()||''):'';
-    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes(execVal.toLowerCase())});
+    const execQty=typeof execQtyCol==='number'?pn(c[execQtyCol]):null;
+    rows.push({srv,med:pn(c[C.M]),kmI:pn(c[C.KI]),kmF:pn(c[C.KF]),sen:c[C.SE]||'',rod,reg,j:c[C.J]||'',k:c[C.K]||'',exec:['x','X','✔','sim','yes'].includes(execVal.toLowerCase()),execQty});
   }
   return{rows,hdr};
 }
@@ -262,15 +265,16 @@ async function loadAll(){
   setSt(true,'Carregando...');
   document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
   // execCol: índice 0-based da coluna "Executado" quando o cabeçalho não usa a palavra "executado"
-  // Poda de Árvores e Disp. Auxiliares → coluna L (índice 11)
+  // Poda de Árvores → coluna L (índice 11)
   // Cerca a Cerca → coluna M (índice 12), comparada com a coluna K (m²)
-  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true,12],['disp',false,11]];
+  // Disp. Auxiliares → coluna N (índice 13) já traz a quantidade executada por linha
+  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true,12],['disp',false,11,13]];
   let total=0;
-  for(const [key,isRoc,execCol] of keys){
+  for(const [key,isRoc,execCol,execQtyCol] of keys){
     try{
       const raw=await fetchCSVRaw(CSVS[key]);
       if(isRoc){AD_ROC=parseCSVRocada(raw,execCol);total+=AD_ROC?.rows?.length||0;}
-      else{AD[key]=parseCSV(raw,execCol);total+=AD[key]?.rows?.length||0;}
+      else{AD[key]=parseCSV(raw,execCol,execQtyCol);total+=AD[key]?.rows?.length||0;}
       ERRS[key]=null;
     }catch(e){ERRS[key]=e.message;}
   }
@@ -1297,7 +1301,7 @@ function renderDisp(){
 
   const totM=rows.reduce((a,r)=>a+r.med,0);
   const filM=fil.reduce((a,r)=>a+r.med,0);
-  const totExec=rows.filter(r=>r.exec).reduce((a,r)=>a+r.med,0);
+  const totExec=rows.reduce((a,r)=>a+(r.execQty||0),0);
   const totPend=totM-totExec;
   const pctExecTotal=totM?(totExec/totM*100):0;
   const pctPendTotal=totM?(totPend/totM*100):0;
