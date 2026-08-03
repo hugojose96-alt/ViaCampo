@@ -189,13 +189,14 @@ function pn(s){
 // não contenha explicitamente a palavra "executado" (ex.: coluna L = índice 11).
 // execQtyCol: índice (0-based) de uma coluna numérica que já traz a quantidade
 // executada por linha (ex.: coluna N = índice 13, usada em Disp. Auxiliares).
-function parseCSV(txt,execColOverride,execQtyCol){
+// forceExecCol: se true, ignora a busca pelo cabeçalho e usa sempre execColOverride.
+function parseCSV(txt,execColOverride,execQtyCol,forceExecCol){
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdr:'m²'};
   const h=sl(lines[0]);
   const hdr=h[C.M]||'m²';
-  // Detectar coluna "Executado" pelo cabeçalho; se não encontrar, usa o fallback informado
-  let execIdx=h.findIndex(v=>v.toLowerCase().includes('executado'));
+  // Detectar coluna "Executado" pelo cabeçalho; se não encontrar (ou se forçado), usa o fallback informado
+  let execIdx=forceExecCol&&typeof execColOverride==='number'?execColOverride:h.findIndex(v=>v.toLowerCase().includes('executado'));
   if(execIdx<0 && typeof execColOverride==='number')execIdx=execColOverride;
   const rows=[];
   for(let i=1;i<lines.length;i++){
@@ -213,14 +214,15 @@ function parseCSV(txt,execColOverride,execQtyCol){
 // ── parseCSV roçada (tem colunas m2 e med) ────────────────────────────────────
 // execColOverride: índice (0-based) da coluna "Executado" a usar caso o cabeçalho
 // não contenha explicitamente a palavra "executado" (ex.: coluna M = índice 12).
-function parseCSVRocada(txt,execColOverride){
+// forceExecCol: se true, ignora a busca pelo cabeçalho e usa sempre execColOverride.
+function parseCSVRocada(txt,execColOverride,forceExecCol){
 
   const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
   if(lines.length<2)return{rows:[],hdrM:'m',hdrK:'m²'};
   const h=sl(lines[0]);
   const hdrM=h[C.M]||'m';
   const hdrK=h[C.K]||'m²';
-  let execIdxR=h.findIndex(v=>v.toLowerCase().includes('executado'));
+  let execIdxR=forceExecCol&&typeof execColOverride==='number'?execColOverride:h.findIndex(v=>v.toLowerCase().includes('executado'));
   if(execIdxR<0 && typeof execColOverride==='number')execIdxR=execColOverride;
   const rows=[];
   for(let i=1;i<lines.length;i++){
@@ -266,15 +268,15 @@ async function loadAll(){
   document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
   // execCol: índice 0-based da coluna "Executado" quando o cabeçalho não usa a palavra "executado"
   // Poda de Árvores → coluna L (índice 11)
-  // Cerca a Cerca → coluna M (índice 12), comparada com a coluna K (m²)
+  // Cerca a Cerca → coluna M (índice 12) com "x", comparada com a coluna K (m²) — forçado, ignora busca por cabeçalho
   // Disp. Auxiliares → coluna N (índice 13) já traz a quantidade executada por linha
-  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true,12],['disp',false,11,13]];
+  const keys=[['mec',false],['man',false],['drenagem',false],['drenrec',false],['drenprof',false],['poda',false,11],['rocada',true,12,true],['disp',false,11,13]];
   let total=0;
-  for(const [key,isRoc,execCol,execQtyCol] of keys){
+  for(const [key,isRoc,execCol,extra] of keys){
     try{
       const raw=await fetchCSVRaw(CSVS[key]);
-      if(isRoc){AD_ROC=parseCSVRocada(raw,execCol);total+=AD_ROC?.rows?.length||0;}
-      else{AD[key]=parseCSV(raw,execCol,execQtyCol);total+=AD[key]?.rows?.length||0;}
+      if(isRoc){AD_ROC=parseCSVRocada(raw,execCol,extra);total+=AD_ROC?.rows?.length||0;}
+      else{AD[key]=parseCSV(raw,execCol,extra);total+=AD[key]?.rows?.length||0;}
       ERRS[key]=null;
     }catch(e){ERRS[key]=e.message;}
   }
