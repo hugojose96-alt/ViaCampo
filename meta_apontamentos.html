@@ -217,6 +217,7 @@ function process(apiRows,equipesRows,metaRows){
   const byTeamDay={}; // key: equipe|||dkey -> count
   const teamRegionalVotes={}; // equipe -> [] regional raw strings
   const teamClasseVotes={}; // equipe -> [] classes
+  const teamMinDate={}; // equipe -> primeira data com apontamento
   let minDate=null,maxDate=null;
 
   apiRows.slice(1).forEach(r=>{
@@ -230,6 +231,7 @@ function process(apiRows,equipesRows,metaRows){
     byTeamDay[key]=(byTeamDay[key]||0)+1;
     (teamRegionalVotes[equipe]=teamRegionalVotes[equipe]||[]).push(regionalRaw);
     (teamClasseVotes[equipe]=teamClasseVotes[equipe]||[]).push(classe);
+    if(!teamMinDate[equipe]||d<teamMinDate[equipe]) teamMinDate[equipe]=d;
     if(!minDate||d<minDate) minDate=d;
     if(!maxDate||d>maxDate) maxDate=d;
   });
@@ -246,15 +248,18 @@ function process(apiRows,equipesRows,metaRows){
       responsavel: info? info.responsavel : 'Não mapeado',
       regional, tipo, empresa,
       classePrimaria: classePrimaria||'—',
-      meta: (meta!==undefined? meta: null)
+      meta: (meta!==undefined? meta: null),
+      minDate: teamMinDate[eq]
     };
   }).sort((a,b)=>a.equipe.localeCompare(b.equipe));
 
-  // build weekday range rows per team
+  // build weekday range rows per team — cada equipe começa a ser avaliada a partir
+  // do SEU primeiro apontamento, não do início de toda a planilha
   DAYROWS=[];
   if(minDate&&maxDate){
     TEAMS.forEach(t=>{
-      for(let d=new Date(minDate); d<=maxDate; d.setDate(d.getDate()+1)){
+      const inicio=t.minDate||minDate;
+      for(let d=new Date(inicio); d<=maxDate; d.setDate(d.getDate()+1)){
         if(isWeekend(d)) continue;
         const dd=new Date(d);
         const key=t.equipe+'|||'+dkey(dd);
@@ -285,24 +290,44 @@ function clearF(){
 }
 
 function render(){
-  const total=DAYROWS.length;
-  const alertas=DAYROWS.filter(r=>r.status==='Alerta').length;
-  const cumpridas=DAYROWS.filter(r=>r.status==='Cumprida').length;
-  const semMeta=DAYROWS.filter(r=>r.status==='Sem meta').length;
-  const avaliaveis=cumpridas+alertas;
-  const pctCump = avaliaveis? Math.round(cumpridas/avaliaveis*100) : 0;
-
   const regs=[...new Set(TEAMS.map(t=>t.regional))].sort();
   const resps=[...new Set(TEAMS.map(t=>t.responsavel))].sort();
 
-  let fil=DAYROWS.filter(r=>{
+  // Base filtrada só por Regional/Tipo/Encarregado — alimenta KPIs e TODOS os gráficos
+  let base=DAYROWS.filter(r=>{
     if(AF.reg!=='all'&&r.regional!==AF.reg) return false;
     if(AF.tipo!=='all'&&r.tipo!==AF.tipo) return false;
     if(AF.resp!=='all'&&r.responsavel!==AF.resp) return false;
+    return true;
+  });
+
+  const total=base.length;
+  const alertas=base.filter(r=>r.status==='Alerta').length;
+  const cumpridas=base.filter(r=>r.status==='Cumprida').length;
+  const semMeta=base.filter(r=>r.status==='Sem meta').length;
+  const avaliaveis=cumpridas+alertas;
+  const pctCump = avaliaveis? Math.round(cumpridas/avaliaveis*100) : 0;
+
+  // Tabela: base + filtro de status + toggle "somente alerta"
+  let fil=base.filter(r=>{
     if(AF.status!=='all'&&r.status!==AF.status) return false;
     if(ONLY_ALERT && r.status!=='Alerta') return false;
     return true;
   });
+
+  // Última data (dentro do filtro Regional/Tipo/Encarregado) e equipes pendentes nesse dia
+  let latestDate=null;
+  base.forEach(r=>{if(!latestDate||r.data>latestDate) latestDate=r.data;});
+  let pendentes=[];
+  if(latestDate){
+    pendentes=base.filter(r=>dkey(r.data)===dkey(latestDate)&&r.apontamentos===0)
+                   .sort((a,b)=>a.equipe.localeCompare(b.equipe));
+  }
+
+  // Alertas por equipe (usado no gráfico e para dimensionar sua altura)
+  const alertByEquipe={};
+  base.filter(r=>r.status==='Alerta').forEach(r=>{alertByEquipe[r.equipe]=(alertByEquipe[r.equipe]||0)+1;});
+  const equipeAlertList=Object.keys(alertByEquipe).sort((a,b)=>alertByEquipe[b]-alertByEquipe[a]);
 
   document.getElementById('mc').innerHTML=`
   <div class="kpi-row">
@@ -323,6 +348,12 @@ function render(){
     <span class="fcount">${fil.length} de ${total} registros na tabela</span>
   </div>
 
+  <div class="cb" style="border-color:${pendentes.length?'rgba(248,113,113,0.5)':'#3d48c0'}">
+    <div class="ct">${pendentes.length?'⚠ ':''}Situação em ${latestDate?fmtDateBR(latestDate):'—'} <span style="color:#7888c0;font-weight:400;text-transform:none">(última data com movimento, conforme filtros ativos)</span></div>
+    <div class="cs">${pendentes.length? pendentes.length+' equipe(s) ainda sem apontamento nesta data' : 'Todas as equipes filtradas já registraram apontamento nesta data'}</div>
+    ${pendentes.length? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${pendentes.map(p=>`<span class="bs salert" title="${p.responsavel} · ${p.regional}">${p.equipe}</span>`).join('')}</div>` : ''}
+  </div>
+
   <div class="g2">
     <div class="cb" style="margin-bottom:0">
       <div class="ct">Cumprimento de Meta — Geral</div><div class="cs">Cumprida vs Alerta vs Sem meta definida</div>
@@ -336,8 +367,10 @@ function render(){
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Alertas por Encarregado</div><div class="cs">Total de dias com meta não atingida, por responsável</div>
-    <div style="position:relative;height:170px"><canvas id="cResp">.</canvas></div>
+    <div class="ct">Alertas por Equipe</div><div class="cs">Total de dias com meta não atingida, por equipe</div>
+    <div class="tw" style="max-height:320px">
+      <div style="position:relative;height:${Math.max(220,equipeAlertList.length*22)}px"><canvas id="cEquipe">.</canvas></div>
+    </div>
   </div>
 
   <div class="cb">
@@ -355,32 +388,29 @@ function render(){
     return;
   }
 
-  // Pie: status geral
+  // Pie: status geral (respeitando filtros de Regional/Tipo/Encarregado)
   const stCounts={Cumprida:cumpridas,Alerta:alertas,'Sem meta':semMeta};
   const stColors={Cumprida:'#4ade80',Alerta:'#f87171','Sem meta':'#a0aadd'};
   CH.pie&&CH.pie.destroy();
   CH.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:Object.keys(stCounts),datasets:[{data:Object.values(stCounts),backgroundColor:Object.keys(stCounts).map(k=>stColors[k]+'cc'),borderColor:Object.keys(stCounts).map(k=>stColors[k]),borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{color:TC,font:{size:11},boxWidth:11,padding:9}}}}});
 
-  // Alertas por regional x tipo
-  const regList=[...new Set(TEAMS.map(t=>t.regional))].sort();
+  // Alertas por regional x tipo (respeitando filtros)
+  const regList=[...new Set(base.map(r=>r.regional))].sort();
   const tipos=['Interna','Terceirizada'];
   const tipoColors={Interna:'#4ade80',Terceirizada:'#a78bfa'};
   const leg1=document.getElementById('leg1');
   tipos.forEach(t=>{leg1.innerHTML+=`<span><span class="ld" style="background:${tipoColors[t]}"></span>${t}</span>`;});
   const alertByRegTipo={};
-  DAYROWS.filter(r=>r.status==='Alerta').forEach(r=>{
+  base.filter(r=>r.status==='Alerta').forEach(r=>{
     alertByRegTipo[r.regional]=alertByRegTipo[r.regional]||{};
     alertByRegTipo[r.regional][r.tipo]=(alertByRegTipo[r.regional][r.tipo]||0)+1;
   });
   CH.rr&&CH.rr.destroy();
-  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:regList,datasets:tipos.map(t=>({label:t,data:regList.map(r=>alertByRegTipo[r]?.[t]||0),backgroundColor:tipoColors[t]+'cc',borderColor:tipoColors[t],borderWidth:1.5,borderRadius:4}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11}},grid:{color:GC},beginAtZero:true,ticks:{precision:0}}}}});
+  CH.rr=new Chart(document.getElementById('cRR'),{type:'bar',data:{labels:regList,datasets:tipos.map(t=>({label:t,data:regList.map(r=>alertByRegTipo[r]?.[t]||0),backgroundColor:tipoColors[t]+'cc',borderColor:tipoColors[t],borderWidth:1.5,borderRadius:4}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11}},grid:{color:GC}},y:{ticks:{color:TC,font:{size:11},precision:0},grid:{color:GC},beginAtZero:true}}}});
 
-  // Alertas por encarregado
-  const alertByResp={};
-  DAYROWS.filter(r=>r.status==='Alerta').forEach(r=>{alertByResp[r.responsavel]=(alertByResp[r.responsavel]||0)+1;});
-  const respList=Object.keys(alertByResp).sort((a,b)=>alertByResp[b]-alertByResp[a]);
-  CH.resp&&CH.resp.destroy();
-  CH.resp=new Chart(document.getElementById('cResp'),{type:'bar',data:{labels:respList,datasets:[{data:respList.map(r=>alertByResp[r]),backgroundColor:respList.map((_,i)=>CL[i%CL.length]+'cc'),borderColor:respList.map((_,i)=>CL[i%CL.length]),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11},precision:0},grid:{color:GC},beginAtZero:true},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
+  // Alertas por equipe (respeitando filtros)
+  CH.equipe&&CH.equipe.destroy();
+  CH.equipe=new Chart(document.getElementById('cEquipe'),{type:'bar',data:{labels:equipeAlertList,datasets:[{data:equipeAlertList.map(r=>alertByEquipe[r]),backgroundColor:equipeAlertList.map((_,i)=>CL[i%CL.length]+'cc'),borderColor:equipeAlertList.map((_,i)=>CL[i%CL.length]),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11},precision:0},grid:{color:GC},beginAtZero:true},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 
   // Tabela
   const tb=document.getElementById('tb');
