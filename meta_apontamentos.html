@@ -296,13 +296,17 @@ function render(){
   const regs=[...new Set(TEAMS.map(t=>t.regional))].sort();
   const resps=[...new Set(TEAMS.map(t=>t.responsavel))].sort();
 
-  // Base filtrada só por Regional/Tipo/Encarregado — alimenta KPIs e TODOS os gráficos
-  let base=DAYROWS.filter(r=>{
+  // baseCore: filtrada só por Regional/Tipo/Encarregado (usada na "Situação em [data]",
+  // que precisa enxergar todos os status para checar se a equipe apontou ou não)
+  let baseCore=DAYROWS.filter(r=>{
     if(AF.reg!=='all'&&r.regional!==AF.reg) return false;
     if(AF.tipo!=='all'&&r.tipo!==AF.tipo) return false;
     if(AF.resp!=='all'&&r.responsavel!==AF.resp) return false;
     return true;
   });
+
+  // base: baseCore + filtro de Status — alimenta KPIs, gráficos e tabela (todos consistentes)
+  let base=baseCore.filter(r=> AF.status==='all' || r.status===AF.status);
 
   const total=base.length;
   const alertas=base.filter(r=>r.status==='Alerta').length;
@@ -311,17 +315,16 @@ function render(){
   const avaliaveis=cumpridas+alertas;
   const pctCump = avaliaveis? Math.round(cumpridas/avaliaveis*100) : 0;
 
-  // Tabela: base + filtro de status + toggle "somente alerta"
+  // Tabela: base (já com status aplicado) + toggle "somente alerta"
   let fil=base.filter(r=>{
-    if(AF.status!=='all'&&r.status!==AF.status) return false;
     if(ONLY_ALERT && r.status!=='Alerta') return false;
     return true;
   });
 
-  // Última data (dentro do filtro Regional/Tipo/Encarregado) e equipes pendentes nesse dia
+  // Última data (dentro do filtro Regional/Tipo/Encarregado, ignorando Status) e equipes pendentes nesse dia
   const allDateKeys=[...new Set(DAYROWS.map(r=>dkey(r.data)))].sort().reverse();
   if(!SEL_DATE || !allDateKeys.includes(SEL_DATE)) SEL_DATE=allDateKeys[0]||null;
-  const rowsNoDia=base.filter(r=>dkey(r.data)===SEL_DATE);
+  const rowsNoDia=baseCore.filter(r=>dkey(r.data)===SEL_DATE);
   const pendentes=rowsNoDia.filter(r=>r.apontamentos===0).sort((a,b)=>a.equipe.localeCompare(b.equipe));
   const fizeram=rowsNoDia.filter(r=>r.apontamentos>0).length;
 
@@ -346,7 +349,7 @@ function render(){
     <select id="fReg" onchange="applyF()"><option value="all">Todas as regionais</option>${regs.map(r=>`<option value="${r}"${AF.reg===r?' selected':''}>${r}</option>`).join('')}</select>
     <select id="fTipo" onchange="applyF()"><option value="all">Interna e Terceirizada</option><option value="Interna"${AF.tipo==='Interna'?' selected':''}>Interna</option><option value="Terceirizada"${AF.tipo==='Terceirizada'?' selected':''}>Terceirizada</option></select>
     <select id="fResp" onchange="applyF()"><option value="all">Todos os encarregados</option>${resps.map(r=>`<option value="${r}"${AF.resp===r?' selected':''}>${r}</option>`).join('')}</select>
-    <select id="fStatus" onchange="applyF()"><option value="all">Todos os status</option><option value="Cumprida"${AF.status==='Cumprida'?' selected':''}>Cumprida</option><option value="Alerta"${AF.status==='Alerta'?' selected':''}>Alerta</option><option value="Sem meta"${AF.status==='Sem meta'?' selected':''}>Sem meta</option></select>
+    <select id="fStatus" onchange="applyF()"><option value="all">Todos os status</option><option value="Cumprida"${AF.status==='Cumprida'?' selected':''}>Cumprida</option><option value="Alerta"${AF.status==='Alerta'?' selected':''}>Alerta</option></select>
     <select id="fData" onchange="applyF()">${allDateKeys.map(k=>{const [y,m,dd]=k.split('-');return `<option value="${k}"${SEL_DATE===k?' selected':''}>${dd}/${m}/${y}</option>`;}).join('')}</select>
     <label class="chk"><input type="checkbox" id="fOnlyAlert" ${ONLY_ALERT?'checked':''} onchange="applyF()"> Mostrar apenas alertas na tabela</label>
     <button class="fc" onclick="clearF()">Limpar</button>
