@@ -100,7 +100,7 @@ const CSVS={
   equipes:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1360967273`,
   meta:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=648165687`
 };
-let CH={},AF={reg:'all',tipo:'all',resp:'all',status:'all'},ONLY_ALERT=true,SEL_DATE=null;
+let CH={},AF={reg:'all',tipo:'all',resp:'all',status:'Alerta'},SEL_DATE=null;
 let TEAMS=[],DAYROWS=[],META_KO=false;
 const CL=['#60a5fa','#e8c040','#4ade80','#f87171','#a78bfa','#fb923c'];
 const GC='rgba(255,255,255,0.07)',TC='#8898cc';
@@ -283,13 +283,12 @@ function applyF(){
   AF.tipo=document.getElementById('fTipo').value;
   AF.resp=document.getElementById('fResp').value;
   AF.status=document.getElementById('fStatus').value;
-  ONLY_ALERT=document.getElementById('fOnlyAlert').checked;
   const fd=document.getElementById('fData');
   if(fd) SEL_DATE=fd.value;
   render();
 }
 function clearF(){
-  AF={reg:'all',tipo:'all',resp:'all',status:'all'};ONLY_ALERT=true;SEL_DATE=null;render();
+  AF={reg:'all',tipo:'all',resp:'all',status:'Alerta'};SEL_DATE=null;render();
 }
 
 function render(){
@@ -315,11 +314,8 @@ function render(){
   const avaliaveis=cumpridas+alertas;
   const pctCump = avaliaveis? Math.round(cumpridas/avaliaveis*100) : 0;
 
-  // Tabela: base (já com status aplicado) + toggle "somente alerta"
-  let fil=base.filter(r=>{
-    if(ONLY_ALERT && r.status!=='Alerta') return false;
-    return true;
-  });
+  // Tabela: apenas a base já filtrada por Status (dropdown único controla tudo)
+  let fil=base;
 
   // Última data (dentro do filtro Regional/Tipo/Encarregado, ignorando Status) e equipes pendentes nesse dia
   const allDateKeys=[...new Set(DAYROWS.map(r=>dkey(r.data)))].sort().reverse();
@@ -328,10 +324,9 @@ function render(){
   const pendentes=rowsNoDia.filter(r=>r.apontamentos===0).sort((a,b)=>a.equipe.localeCompare(b.equipe));
   const fizeram=rowsNoDia.filter(r=>r.apontamentos>0).length;
 
-  // Apontamentos totais por equipe (não é contagem de alertas — é o total realizado no período filtrado)
-  const totalByEquipe={};
-  base.forEach(r=>{totalByEquipe[r.equipe]=(totalByEquipe[r.equipe]||0)+r.apontamentos;});
-  const equipeTotalList=Object.keys(totalByEquipe).filter(k=>totalByEquipe[k]>0).sort((a,b)=>totalByEquipe[b]-totalByEquipe[a]);
+  // Apontamentos por equipe NA DATA SELECIONADA (respeitando também o filtro de Status)
+  const rowsNoDiaStatus=rowsNoDia.filter(r=> AF.status==='all' || r.status===AF.status);
+  const equipeDiaList=rowsNoDiaStatus.filter(r=>r.apontamentos>0).sort((a,b)=>b.apontamentos-a.apontamentos);
 
   const regListLen=[...new Set(base.map(r=>r.regional))].length||1;
   const tipoListLen=[...new Set(base.map(r=>r.tipo))].length||1;
@@ -349,9 +344,8 @@ function render(){
     <select id="fReg" onchange="applyF()"><option value="all">Todas as regionais</option>${regs.map(r=>`<option value="${r}"${AF.reg===r?' selected':''}>${r}</option>`).join('')}</select>
     <select id="fTipo" onchange="applyF()"><option value="all">Interna e Terceirizada</option><option value="Interna"${AF.tipo==='Interna'?' selected':''}>Interna</option><option value="Terceirizada"${AF.tipo==='Terceirizada'?' selected':''}>Terceirizada</option></select>
     <select id="fResp" onchange="applyF()"><option value="all">Todos os encarregados</option>${resps.map(r=>`<option value="${r}"${AF.resp===r?' selected':''}>${r}</option>`).join('')}</select>
-    <select id="fStatus" onchange="applyF()"><option value="all">Todos os status</option><option value="Cumprida"${AF.status==='Cumprida'?' selected':''}>Cumprida</option><option value="Alerta"${AF.status==='Alerta'?' selected':''}>Alerta</option></select>
+    <select id="fStatus" onchange="applyF()"><option value="all"${AF.status==='all'?' selected':''}>Todos os status</option><option value="Cumprida"${AF.status==='Cumprida'?' selected':''}>Cumprida</option><option value="Alerta"${AF.status==='Alerta'?' selected':''}>Alerta</option></select>
     <select id="fData" onchange="applyF()">${allDateKeys.map(k=>{const [y,m,dd]=k.split('-');return `<option value="${k}"${SEL_DATE===k?' selected':''}>${dd}/${m}/${y}</option>`;}).join('')}</select>
-    <label class="chk"><input type="checkbox" id="fOnlyAlert" ${ONLY_ALERT?'checked':''} onchange="applyF()"> Mostrar apenas alertas na tabela</label>
     <button class="fc" onclick="clearF()">Limpar</button>
     <span class="fcount">${fil.length} de ${total} registros na tabela</span>
   </div>
@@ -364,26 +358,27 @@ function render(){
 
   <div class="g2">
     <div class="cb" style="margin-bottom:0">
-      <div class="ct">Cumprimento de Meta por Regional</div><div class="cs">% de dias com meta cumprida vs alerta</div>
+      <div class="ct">Cumprimento de Meta por Regional</div><div class="cs">% de dias com meta cumprida vs alerta — período filtrado</div>
       <div class="leg" id="leg1"></div>
       <div style="position:relative;height:${Math.max(120,regListLen*46)}px"><canvas id="cRegPct">.</canvas></div>
     </div>
     <div class="cb" style="margin-bottom:0">
-      <div class="ct">Cumprimento de Meta por Tipo</div><div class="cs">Interna vs Terceirizada</div>
+      <div class="ct">Cumprimento de Meta por Tipo</div><div class="cs">Interna vs Terceirizada — período filtrado</div>
       <div class="leg" id="leg2"></div>
       <div style="position:relative;height:${Math.max(120,tipoListLen*46)}px"><canvas id="cTipoPct">.</canvas></div>
     </div>
   </div>
 
   <div class="cb" style="margin-top:12px">
-    <div class="ct">Apontamentos por Equipe</div><div class="cs">Total de apontamentos realizados no período filtrado, por equipe</div>
+    <div class="ct">Apontamentos por Equipe em ${SEL_DATE?fmtDateBR(keyToDate(SEL_DATE)):'—'}</div><div class="cs">Apontamentos realizados nesta data específica, por equipe (verde = meta cumprida, vermelho = alerta)</div>
     <div class="tw" style="max-height:320px">
-      <div style="position:relative;height:${Math.max(220,equipeTotalList.length*22)}px"><canvas id="cEquipe">.</canvas></div>
+      <div style="position:relative;height:${Math.max(120,equipeDiaList.length*22)}px"><canvas id="cEquipe">.</canvas></div>
     </div>
+    ${!equipeDiaList.length? `<div class="empty">Nenhuma equipe filtrada registrou apontamento nesta data.</div>`:''}
   </div>
 
   <div class="cb">
-    <div class="ct">Detalhamento — Meta por Equipe / Dia</div><div class="cs">${ONLY_ALERT?'Exibindo apenas dias com alerta':'Exibindo todos os dias úteis avaliados'} — ${fil.length} registros</div>
+    <div class="ct">Detalhamento — Meta por Equipe / Dia</div><div class="cs">${AF.status==='Alerta'?'Exibindo apenas dias com alerta':AF.status==='Cumprida'?'Exibindo apenas dias com meta cumprida':'Exibindo todos os dias úteis avaliados'} — ${fil.length} registros</div>
     <div class="tw">
       <table>
         <thead><tr><th>Data</th><th>Equipe</th><th>Encarregado</th><th>Regional</th><th>Tipo</th><th>Classe (referência)</th><th style="text-align:right">Apontamentos</th><th style="text-align:right">Meta/dia</th><th>Status</th></tr></thead>
@@ -429,9 +424,12 @@ function render(){
     {label:'Alerta',data:tipoStats.map(s=>s.a),backgroundColor:'#f87171cc',borderColor:'#f87171',borderWidth:1.5}
   ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x}%`}}},scales:{x:{stacked:true,max:100,ticks:{color:TC,font:{size:11},callback:v=>v+'%'},grid:{color:GC}},y:{stacked:true,ticks:{color:TC,font:{size:11}},grid:{color:GC}}}}});
 
-  // ---- Apontamentos por equipe (total realizado, não contagem de alertas) ----
+  // ---- Apontamentos por equipe NA DATA SELECIONADA (cor = status daquele dia) ----
   CH.equipe&&CH.equipe.destroy();
-  CH.equipe=new Chart(document.getElementById('cEquipe'),{type:'bar',data:{labels:equipeTotalList,datasets:[{data:equipeTotalList.map(r=>totalByEquipe[r]),backgroundColor:equipeTotalList.map((_,i)=>CL[i%CL.length]+'cc'),borderColor:equipeTotalList.map((_,i)=>CL[i%CL.length]),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11},precision:0},grid:{color:GC},beginAtZero:true},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
+  const eqLabels=equipeDiaList.map(r=>r.equipe);
+  const eqValues=equipeDiaList.map(r=>r.apontamentos);
+  const eqColors=equipeDiaList.map(r=>r.status==='Cumprida'?'#4ade80':'#f87171');
+  CH.equipe=new Chart(document.getElementById('cEquipe'),{type:'bar',data:{labels:eqLabels,datasets:[{data:eqValues,backgroundColor:eqColors.map(c=>c+'cc'),borderColor:eqColors,borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:11},precision:0},grid:{color:GC},beginAtZero:true},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
 
   // Tabela
   const tb=document.getElementById('tb');
