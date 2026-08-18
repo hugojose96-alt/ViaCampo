@@ -163,8 +163,8 @@ function render(){
   const rodsAll=[...new Set(ROWS.map(r=>r.rod))].sort();
   const base=AFrod==='all'?ROWS:ROWS.filter(r=>r.rod===AFrod);
 
-  // Meta total = soma de toda a coluna F (no escopo filtrado)
-  const totalMeta=base.reduce((a,r)=>a+r.med,0);
+  // Meta total = valor fixo (Q4 da planilha) = 496.625
+  const totalMeta=496625;
 
   let reg1=0,reg2=0,pendente=0;
   const outras={};
