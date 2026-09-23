@@ -207,9 +207,10 @@ async function loadAll(){
   }
 }
 
-function compute(tabKey){
+function compute(tabKey,registrosOverride){
   const tab=TABS.find(t=>t.key===tabKey);
-  const {master,registros}=AD;
+  const {master}=AD;
+  const registros=registrosOverride||AD.registros;
   const stats={}; // nomeCanonico -> {regional,total,divergente,faltando:{campo:qtd}}
   const faltas=[]; // detalhamento
 
@@ -255,15 +256,25 @@ function render(){
   // Filtros aplicados ao detalhamento de faltas
   const faltasF=faltas.filter(f=>(AF.equipe==='all'||f.equipe===AF.equipe)&&(AF.data==='all'||f.dataStr===AF.data));
 
-  // KPIs
+  // KPIs gerais (sempre baseados no total, não mudam com o filtro)
   const totalEquipes=equipes.length;
   const totalDias=equipes.reduce((a,e)=>a+stats[e].total,0);
   const totalDivergentes=equipes.reduce((a,e)=>a+stats[e].divergente,0);
   const pctGeral=totalDias?Math.round(totalDivergentes/totalDias*1000)/10:0;
-  const ranking=equipes.map(e=>({nome:e,...stats[e],pct:stats[e].total?Math.round(stats[e].divergente/stats[e].total*1000)/10:0}))
+  const rankingGeral=equipes.map(e=>({nome:e,...stats[e],pct:stats[e].total?Math.round(stats[e].divergente/stats[e].total*1000)/10:0}))
     .sort((a,b)=>b.pct-a.pct||b.total-a.total);
-  const maisDivergente=ranking[0];
-  const maisConsistente=[...ranking].sort((a,b)=>a.pct-b.pct||b.total-a.total)[0];
+  const maisDivergente=rankingGeral[0];
+  const maisConsistente=[...rankingGeral].sort((a,b)=>a.pct-b.pct||b.total-a.total)[0];
+
+  // Registros filtrados por equipe/dia (mesmo filtro do detalhamento), usados no gráfico e no ranking abaixo
+  const registrosF=AD.registros.filter(r=>{
+    const mm=AD.master[norm(r.equipe)];
+    const canon=mm?mm.nome:r.equipe;
+    return (AF.equipe==='all'||canon===AF.equipe)&&(AF.data==='all'||r.dataStr===AF.data);
+  });
+  const statsF=compute(TAB,registrosF).stats;
+  const ranking=Object.keys(statsF).sort().map(e=>({nome:e,...statsF[e],pct:statsF[e].total?Math.round(statsF[e].divergente/statsF[e].total*1000)/10:0}))
+    .sort((a,b)=>b.pct-a.pct||b.total-a.total);
 
   document.getElementById('mc').innerHTML=`
   <div class="tabs">
@@ -278,7 +289,7 @@ function render(){
   </div>
 
   <div class="filters">
-    <span class="fl">Filtros (detalhamento de faltas):</span>
+    <span class="fl">Filtros (equipe / dia):</span>
     <select id="fEquipe" onchange="applyF()"><option value="all">Todas as equipes</option>${equipes.map(e=>`<option value="${e}"${AF.equipe===e?' selected':''}>${e}</option>`).join('')}</select>
     <select id="fData" onchange="applyF()"><option value="all">Todas as datas</option>${datas.map(d=>`<option value="${d}"${AF.data===d?' selected':''}>${d}</option>`).join('')}</select>
     <button class="fc" onclick="clearF()">Limpar</button>
@@ -287,23 +298,23 @@ function render(){
 
   <div class="cb">
     <div class="ct">% de Dias com ${tituloTab} Divergente por Equipe</div>
-    <div class="cs">Comparação entre ${tab.key==='pessoal'?'efetivo real':'equipamentos realizados'} (${tab.descReal}) e quadro de referência (${tab.descEsp}) · barra = % de dias divergentes</div>
+    <div class="cs">Comparação entre ${tab.key==='pessoal'?'efetivo real':'equipamentos realizados'} (${tab.descReal}) e quadro de referência (${tab.descEsp}) · barra = % de dias divergentes${(AF.equipe!=='all'||AF.data!=='all')?' · <span style="color:#e8c040">filtro ativo</span>':''}</div>
     <div style="position:relative;height:${Math.max(220,ranking.length*22)}px"><canvas id="cRank">.</canvas></div>
   </div>
 
   <div class="cb">
-    <div class="ct">Ranking por Equipe</div><div class="cs">${ranking.length} equipes · ordenado por % de divergência</div>
+    <div class="ct">Ranking por Equipe</div><div class="cs">${ranking.length} equipe${ranking.length===1?'':'s'} · ordenado por % de divergência${(AF.equipe!=='all'||AF.data!=='all')?' · <span style="color:#e8c040">filtro ativo</span>':''}</div>
     <div class="tw">
       <table>
         <thead><tr><th>Equipe</th><th>Regional</th><th>Dias analisados</th><th>Dias divergentes</th><th>% Divergente</th>${tab.fields.map(f=>`<th>${f.lbl} faltou</th>`).join('')}</tr></thead>
-        <tbody>${ranking.map(r=>`<tr>
+        <tbody>${ranking.length?ranking.map(r=>`<tr>
           <td>${r.nome}</td>
           <td><span class="bs ${r.regional==='Reg 1'?'r1':'r2'}">${r.regional}</span></td>
           <td>${r.total}</td>
           <td>${r.divergente}</td>
           <td><div class="pctcell"><div class="pbar"><i style="width:${r.pct}%;background:${pctColor(r.pct)}"></i></div><span class="pctnum" style="color:${pctColor(r.pct)}">${r.pct}%</span></div></td>
           ${tab.fields.map(f=>`<td>${r.faltando[f.k]}x</td>`).join('')}
-        </tr>`).join('')}</tbody>
+        </tr>`).join(''):`<tr><td colspan="${5+tab.fields.length}" style="text-align:center;color:#5060a0;padding:20px">Nenhum registro encontrado para o filtro selecionado.</td></tr>`}</tbody>
       </table>
     </div>
   </div>
