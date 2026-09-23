@@ -174,7 +174,16 @@ async function carregarRDO(){
   let j;
   try{j=JSON.parse(t);}catch(e){throw new Error('o Apps Script não devolveu JSON (confira se a implantação está com acesso "Qualquer pessoa")');}
   if(j&&j.erro)throw new Error(j.erro);
-  if(!j||!Array.isArray(j.colunas)||!Array.isArray(j.linhas))throw new Error('formato inesperado no rdo-recursos.json');
+  if(!j||!Array.isArray(j.linhas))throw new Error('formato inesperado no rdo-recursos.json (campo "linhas" ausente)');
+  // Formato atual do arquivo: "linhas" = lista de objetos {"Equipe":...,"Data":...,"Oficial":...}.
+  // Também aceita o formato antigo (colunas[] + linhas em arrays). Nos dois casos vira colunas + linhas em arrays.
+  if(!Array.isArray(j.colunas)){
+    const cols=[], vistos=new Set();
+    const ehObj=o=>o&&typeof o==='object'&&!Array.isArray(o);
+    j.linhas.forEach(o=>{if(ehObj(o))Object.keys(o).forEach(k=>{if(!vistos.has(k)){vistos.add(k);cols.push(k);}});});
+    j.colunas=cols;
+    j.linhas=j.linhas.map(o=>ehObj(o)?cols.map(c=>o[c]):[]);
+  }
   return j;
 }
 async function carregarQuadro(){
