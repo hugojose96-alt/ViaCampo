@@ -231,7 +231,7 @@ function compute(tabKey,registrosOverride){
       // Quando o previsto é 0, não há o que faltar, então não é divergência.
       // Quantidade acima do esperado (sobra) também é ignorada — não é tratada como problema.
       if(esp>0 && real<esp){
-        anyFalta=true; st.faltando[f.k]++;
+        anyFalta=true; st.faltando[f.k]+=(esp-real);
         faltas.push({dataStr:r.dataStr,dataObj:r.dataObj,equipe:canon,regional:regional(canon),campo:f.lbl,cor:PALETTE[idx%PALETTE.length],real,esp,faltando:esp-real,serial:r.serial});
       }
     });
