@@ -76,7 +76,7 @@ tr:hover td{background:rgba(255,255,255,0.03)}
   <div class="header-right"><strong id="hDate">—</strong>Planejamento de Obras</div>
 </div>
 
-<div style="background:#182060;padding:6px 28px;font-size:10px;color:#5060a0;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0">CONTROLE DE EQUIPES — EFETIVO E EQUIPAMENTOS REAIS VS QUADRO DE REFERÊNCIA — DADOS AO VIVO DA PLANILHA</div>
+<div style="background:#182060;padding:6px 28px;font-size:10px;color:#5060a0;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2d38b0">CONTROLE DE EQUIPES — EFETIVO E EQUIPAMENTOS REAIS VS QUADRO DE REFERÊNCIA — DADOS DIÁRIOS DO RDO</div>
 
 <div class="body">
   <div class="status-bar">
@@ -91,20 +91,29 @@ tr:hover td{background:rgba(255,255,255,0.03)}
 <script>
 document.getElementById('hDate').textContent=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
+// ── FONTES DE DADOS ───────────────────────────────────────────────
+// 1) REALIZADO (RDO): vem do rdo-recursos.json, atualizado diariamente no Google Drive.
+//    O arquivo é entregue por um Google Apps Script (veja apps_script_rdo.gs).
+//    Cole abaixo a URL do aplicativo da web (termina em /exec).
+const RDO_API_URL='COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+
+// 2) QUADRO DE REFERÊNCIA (quantidade que cada equipe deve ter): continua na planilha.
+//    Apenas as colunas P em diante são lidas. As colunas A–O da planilha não são mais usadas.
 const CSV_URLS=[
   'https://docs.google.com/spreadsheets/d/1vCZUNIql89FbqEdfgeI_dvghB03m3IMuNGJGUJ4RPZ4/gviz/tq?tqx=out:csv&gid=1771563466',
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWOUerAj_cWfsIW3nLs2aXB-e2V-SKFg6bruMoP1Ti_pEr7pKiT9Oio0um9g5okJdnbICre7oDZyEj/pub?gid=1771563466&single=true&output=csv'
 ];
-// Bloco REALIZADO (B a O):
-// A=0 Serial | B=1 Equipe | C=2 Data | D=3 Oficial(real) | E=4 Líder(real) | F=5 Ajudante(real)
-// G=6 Gerador(real) | H=7 Betoneira(real) | I=8 Roçadeira(real) | J=9 (em branco, ignorado)
-// K=10 Moto Serra(real) | L=11 Triturador(real) | M=12 Motopoda(real) | N=13 Caminhão Munck(real) | O=14 Caminhão 3/4(real)
-// Bloco PREVISTO / QUADRO DE REFERÊNCIA (P em diante):
+// Quadro de referência (planilha):
 // P=15 Equipe(mestre) | Q=16 Oficial(esp) | R=17 Líder(esp) | S=18 Ajudante(esp)
 // T=19 Gerador(esp) | U=20 Betoneira(esp) | V=21 Roçadeira(esp) | W=22 Moto Serra(esp)
 // X=23 Triturador(esp) | Y=24 Motopoda(esp) | Z=25 Caminhão Munck(esp) | AA=26 Caminhão 3/4(esp)
+//
+// Realizado (rdo-recursos.json): as colunas são lidas pelo NOME (Oficial, Líder de Equipe,
+// Ajudante, Gerador, Betoneira, Roçadeira, Moto Serra, Triturador, Motopoda,
+// Caminhão Munck, Caminhão 3/4), então mudanças de posição no JSON não deslocam os dados.
 
-let AD=null, AF={equipe:'all',data:'all'}, TAB='pessoal';
+// mes: null = ainda não definido (na primeira carga vira o mês mais recente do JSON)
+let AD=null, AF={equipe:'all',mes:null,data:'all'}, TAB='pessoal';
 
 const ROLES=[
   {k:'oficial',lbl:'Oficial'},
@@ -124,10 +133,10 @@ const EQUIPMENTS=[
 const TABS=[
   {key:'pessoal',label:'👷 Funcionários',fields:ROLES,
     getReal:(r,k)=>r[k], getEsp:(mm,k)=>mm[k],
-    itemNome:'Efetivo', descReal:'D/E/F', descEsp:'Q/R/S'},
+    itemNome:'Efetivo', descReal:'RDO', descEsp:'planilha Q–S'},
   {key:'equip',label:'🚜 Equipamentos',fields:EQUIPMENTS,
     getReal:(r,k)=>r.equip[k], getEsp:(mm,k)=>mm.equip[k],
-    itemNome:'Equipamento', descReal:'G–O', descEsp:'T–AA'}
+    itemNome:'Equipamento', descReal:'RDO', descEsp:'planilha T–AA'}
 ];
 const PALETTE=['#93c5fd','#a78bfa','#fb923c','#4ade80','#f472b6','#38bdf8','#facc15','#f87171'];
 
@@ -146,43 +155,55 @@ function norm(s){return (s||'').toLowerCase().replace(/-/g,' ').replace(/\s+/g,'
 function parseData(s){const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec((s||'').trim());if(!m)return null;return new Date(+m[3],+m[2]-1,+m[1]);}
 function regional(nome){const m=/^(Reg\s*\d+)/i.exec(nome||'');return m?m[1].replace(/\s+/g,' '):'—';}
 
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function mesLabel(k){const p=(k||'').split('-');return p.length===2?MESES[+p[1]-1]+'/'+p[0]:k;}
+function isoParaData(s){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s||'').trim());if(!m)return null;return {dataObj:new Date(+m[1],+m[2]-1,+m[3]),dataStr:m[3]+'/'+m[2]+'/'+m[1],mesKey:m[1]+'-'+m[2]};}
+function mesPadrao(){if(!AD)return 'all';const ms=[...new Set(AD.registros.map(r=>r.mesKey))].sort();return ms.length?ms[ms.length-1]:'all';}
+function nk(s){return norm(String(s==null?'':s)).normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function num(v){if(typeof v==='number')return isFinite(v)?v:0;return pn(v==null?'':String(v));}
+
+async function fetchTexto(url){
+  const sep=url.includes('?')?'&':'?';
+  const res=await fetch(url+sep+'t='+Date.now());
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  return res.text();
+}
+async function carregarRDO(){
+  if(!RDO_API_URL||/^COLE_AQUI/.test(RDO_API_URL))throw new Error('defina a URL do Apps Script em RDO_API_URL');
+  const t=await fetchTexto(RDO_API_URL);
+  let j;
+  try{j=JSON.parse(t);}catch(e){throw new Error('o Apps Script não devolveu JSON (confira se a implantação está com acesso "Qualquer pessoa")');}
+  if(j&&j.erro)throw new Error(j.erro);
+  if(!j||!Array.isArray(j.colunas)||!Array.isArray(j.linhas))throw new Error('formato inesperado no rdo-recursos.json');
+  return j;
+}
+async function carregarQuadro(){
+  let lastErr=null;
+  for(const url of CSV_URLS){
+    try{
+      const t=await fetchTexto(url);
+      if(t && t.trim().length && !/^\s*<(!DOCTYPE|html)/i.test(t))return t;
+      lastErr=new Error('resposta vazia ou não é CSV');
+    }catch(e){lastErr=e;}
+  }
+  throw lastErr||new Error('nenhuma fonte respondeu');
+}
+
 async function loadAll(){
   document.getElementById('sDot').className='dot';
   document.getElementById('sTxt').textContent='Conectando...';
   document.getElementById('mc').innerHTML='<div class="loading"><div class="spinner"></div>Carregando dados...</div>';
-  let txt=null, lastErr=null;
-  for(const url of CSV_URLS){
-    try{
-      const sep=url.includes('?')?'&':'?';
-      const res=await fetch(url+sep+'t='+Date.now());
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      const t=await res.text();
-      if(t && t.trim().length && !/^\s*<(!DOCTYPE|html)/i.test(t)){txt=t;break;}
-      lastErr=new Error('Resposta vazia ou não é CSV');
-    }catch(e){lastErr=e;}
-  }
   try{
-    if(!txt)throw lastErr||new Error('Nenhuma fonte de dados respondeu');
-    const lines=txt.split('\n').map(l=>l.replace(/\r$/,'')).filter(l=>l.trim().length);
+    const [rdo,csv]=await Promise.all([
+      carregarRDO().catch(e=>{throw new Error('RDO: '+e.message);}),
+      carregarQuadro().catch(e=>{throw new Error('quadro de referência: '+e.message);})
+    ]);
 
+    // ── Quadro de referência (planilha, colunas P em diante) ──
     const master={};   // norm(nome) -> {nome,oficial,lider,ajudante,equip:{...}}
-    const registros=[]; // {serial,equipe,dataStr,dataObj,oficial,lider,ajudante,equip:{...}}
-
-    lines.forEach(line=>{
+    csv.split('\n').map(l=>l.replace(/\r$/,'')).filter(l=>l.trim().length).forEach(line=>{
       const f=sl(line);
-      const dataObj=parseData(f[2]);
-      if(dataObj && f[1] && f[1].trim()){
-        registros.push({
-          serial:f[0], equipe:f[1].trim(), dataStr:f[2].trim(), dataObj,
-          oficial:pn(f[3]), lider:pn(f[4]), ajudante:pn(f[5]),
-          equip:{
-            gerador:pn(f[6]), betoneira:pn(f[7]), rocadeira:pn(f[8]),
-            motoserra:pn(f[10]), triturador:pn(f[11]), motopoda:pn(f[12]),
-            caminhaomunck:pn(f[13]), caminhao34:pn(f[14])
-          }
-        });
-      }
-      if(f[15] && f[15].trim()){
+      if(f[15] && f[15].trim() && norm(f[15])!=='equipes'){
         const nome=f[15].trim();
         master[norm(nome)]={
           nome,
@@ -196,14 +217,42 @@ async function loadAll(){
       }
     });
 
-    AD={master,registros};
+    // ── Realizado (rdo-recursos.json), colunas localizadas pelo nome ──
+    const idx={};
+    rdo.colunas.forEach((c,i)=>{const k=nk(c);if(!(k in idx))idx[k]=i;});
+    const NOMES={serial:'Serial do RDO',equipe:'Equipe',data:'Data',oficial:'Oficial',lider:'Líder de Equipe',ajudante:'Ajudante',
+      gerador:'Gerador',betoneira:'Betoneira',rocadeira:'Roçadeira',motoserra:'Moto Serra',triturador:'Triturador',motopoda:'Motopoda',
+      caminhaomunck:'Caminhão Munck',caminhao34:'Caminhão 3/4'};
+    const C={}, faltam=[];
+    Object.keys(NOMES).forEach(k=>{const i=idx[nk(NOMES[k])];if(i===undefined)faltam.push(NOMES[k]);else C[k]=i;});
+    if(faltam.length)throw new Error('colunas ausentes no rdo-recursos.json: '+faltam.join(', '));
+
+    const registros=[]; // {serial,equipe,dataStr,dataObj,mesKey,oficial,lider,ajudante,equip:{...}}
+    rdo.linhas.forEach(l=>{
+      const d=isoParaData(l[C.data]);
+      const eq=l[C.equipe];
+      if(!d || eq==null || !String(eq).trim())return;
+      registros.push({
+        serial:l[C.serial], equipe:String(eq).trim(), dataStr:d.dataStr, dataObj:d.dataObj, mesKey:d.mesKey,
+        oficial:num(l[C.oficial]), lider:num(l[C.lider]), ajudante:num(l[C.ajudante]),
+        equip:{
+          gerador:num(l[C.gerador]), betoneira:num(l[C.betoneira]), rocadeira:num(l[C.rocadeira]),
+          motoserra:num(l[C.motoserra]), triturador:num(l[C.triturador]), motopoda:num(l[C.motopoda]),
+          caminhaomunck:num(l[C.caminhaomunck]), caminhao34:num(l[C.caminhao34])
+        }
+      });
+    });
+
+    AD={master,registros,atualizadoEm:rdo.atualizadoEm||''};
+    const meses=new Set(registros.map(r=>r.mesKey));
+    if(AF.mes===null || (AF.mes!=='all' && !meses.has(AF.mes)))AF.mes=mesPadrao();
     document.getElementById('sDot').className='dot';
-    document.getElementById('sTxt').textContent=`Conectado — ${registros.length} registros · ${Object.keys(master).length} equipes no quadro · atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
+    document.getElementById('sTxt').textContent=`Conectado — ${registros.length} registros do RDO · ${Object.keys(master).length} equipes no quadro · RDO atualizado em ${AD.atualizadoEm||'—'} · carregado às ${new Date().toLocaleTimeString('pt-BR')}`;
     render();
   }catch(err){
     document.getElementById('sDot').className='dot err';
     document.getElementById('sTxt').textContent='Erro ao carregar: '+err.message;
-    document.getElementById('mc').innerHTML='<div class="empty">Não foi possível carregar a planilha.<br>Verifique se o link publicado ainda está válido.</div>';
+    document.getElementById('mc').innerHTML='<div class="empty">Não foi possível carregar os dados.<br>Confira a URL e a implantação do Apps Script (rdo-recursos.json) e o link publicado da planilha do quadro de referência.</div>';
   }
 }
 
@@ -247,16 +296,26 @@ function pctColor(p){return p===0?'#4ade80':p<34?'#4ade80':p<67?'#fb923c':'#f871
 function switchTab(key){TAB=key;render();}
 
 function render(){
-  if(!AD||!AD.registros.length){document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique a publicação da planilha.</div>';return;}
-  const {stats,faltas,tab}=compute(TAB);
+  if(!AD||!AD.registros.length){document.getElementById('mc').innerHTML='<div class="empty">Sem dados disponíveis.<br>Verifique o rdo-recursos.json e a planilha do quadro de referência.</div>';return;}
+
+  // Mês: define o período analisado (KPIs, gráfico, ranking e detalhamento)
+  const meses=[...new Set(AD.registros.map(r=>r.mesKey))].sort().reverse();
+  if(AF.mes===null||(AF.mes!=='all'&&!meses.includes(AF.mes)))AF.mes=mesPadrao();
+  const registrosMes=AF.mes==='all'?AD.registros:AD.registros.filter(r=>r.mesKey===AF.mes);
+  const mesTxt=AF.mes==='all'?'todos os meses':mesLabel(AF.mes);
+
+  const {stats,faltas,tab}=compute(TAB,registrosMes);
   const equipes=Object.keys(stats).sort();
-  const datas=[...new Set(AD.registros.map(r=>r.dataStr))].sort((a,b)=>parseData(b)-parseData(a));
+  const datas=[...new Set(registrosMes.map(r=>r.dataStr))].sort((a,b)=>parseData(b)-parseData(a));
   const tituloTab=tab.key==='pessoal'?'Efetivo':'Equipamento';
+  // Filtros de equipe/dia que deixaram de existir no mês escolhido voltam para "todos"
+  if(AF.equipe!=='all'&&!equipes.includes(AF.equipe))AF.equipe='all';
+  if(AF.data!=='all'&&!datas.includes(AF.data))AF.data='all';
 
   // Filtros aplicados ao detalhamento de faltas
   const faltasF=faltas.filter(f=>(AF.equipe==='all'||f.equipe===AF.equipe)&&(AF.data==='all'||f.dataStr===AF.data));
 
-  // KPIs gerais (sempre baseados no total, não mudam com o filtro)
+  // KPIs gerais (baseados no mês escolhido; não mudam com os filtros de equipe/dia)
   const totalEquipes=equipes.length;
   const totalDias=equipes.reduce((a,e)=>a+stats[e].total,0);
   const totalDivergentes=equipes.reduce((a,e)=>a+stats[e].divergente,0);
@@ -266,8 +325,8 @@ function render(){
   const maisDivergente=rankingGeral[0];
   const maisConsistente=[...rankingGeral].sort((a,b)=>a.pct-b.pct||b.total-a.total)[0];
 
-  // Registros filtrados por equipe/dia (mesmo filtro do detalhamento), usados no gráfico e no ranking abaixo
-  const registrosF=AD.registros.filter(r=>{
+  // Registros do mês filtrados por equipe/dia (mesmo filtro do detalhamento), usados no gráfico e no ranking abaixo
+  const registrosF=registrosMes.filter(r=>{
     const mm=AD.master[norm(r.equipe)];
     const canon=mm?mm.nome:r.equipe;
     return (AF.equipe==='all'||canon===AF.equipe)&&(AF.data==='all'||r.dataStr===AF.data);
@@ -289,8 +348,9 @@ function render(){
   </div>
 
   <div class="filters">
-    <span class="fl">Filtros (equipe / dia):</span>
+    <span class="fl">Filtros (equipe / mês / dia):</span>
     <select id="fEquipe" onchange="applyF()"><option value="all">Todas as equipes</option>${equipes.map(e=>`<option value="${e}"${AF.equipe===e?' selected':''}>${e}</option>`).join('')}</select>
+    <select id="fMes" onchange="applyF()"><option value="all">Todos os meses</option>${meses.map(m=>`<option value="${m}"${AF.mes===m?' selected':''}>${mesLabel(m)}</option>`).join('')}</select>
     <select id="fData" onchange="applyF()"><option value="all">Todas as datas</option>${datas.map(d=>`<option value="${d}"${AF.data===d?' selected':''}>${d}</option>`).join('')}</select>
     <button class="fc" onclick="clearF()">Limpar</button>
     <span class="fcount">${faltasF.length} de ${faltas.length} faltas</span>
@@ -298,12 +358,12 @@ function render(){
 
   <div class="cb">
     <div class="ct">% de Dias com ${tituloTab} Divergente por Equipe</div>
-    <div class="cs">Comparação entre ${tab.key==='pessoal'?'efetivo real':'equipamentos realizados'} (${tab.descReal}) e quadro de referência (${tab.descEsp}) · barra = % de dias divergentes${(AF.equipe!=='all'||AF.data!=='all')?' · <span style="color:#e8c040">filtro ativo</span>':''}</div>
+    <div class="cs">Comparação entre ${tab.key==='pessoal'?'efetivo real':'equipamentos realizados'} (${tab.descReal}) e quadro de referência (${tab.descEsp}) · barra = % de dias divergentes · ${mesTxt}${(AF.equipe!=='all'||AF.data!=='all')?' · <span style="color:#e8c040">filtro ativo</span>':''}</div>
     <div style="position:relative;height:${Math.max(220,ranking.length*22)}px"><canvas id="cRank">.</canvas></div>
   </div>
 
   <div class="cb">
-    <div class="ct">Ranking por Equipe</div><div class="cs">${ranking.length} equipe${ranking.length===1?'':'s'} · ordenado por % de divergência${(AF.equipe!=='all'||AF.data!=='all')?' · <span style="color:#e8c040">filtro ativo</span>':''}</div>
+    <div class="ct">Ranking por Equipe</div><div class="cs">${ranking.length} equipe${ranking.length===1?'':'s'} · ordenado por % de divergência · ${mesTxt}${(AF.equipe!=='all'||AF.data!=='all')?' · <span style="color:#e8c040">filtro ativo</span>':''}</div>
     <div class="tw">
       <table>
         <thead><tr><th>Equipe</th><th>Regional</th><th>Dias analisados</th><th>Dias divergentes</th><th>% Divergente</th>${tab.fields.map(f=>`<th>${f.lbl} faltou</th>`).join('')}</tr></thead>
@@ -345,8 +405,15 @@ function render(){
   }
 }
 
-function applyF(){AF.equipe=document.getElementById('fEquipe').value;AF.data=document.getElementById('fData').value;render();}
-function clearF(){AF={equipe:'all',data:'all'};render();}
+function applyF(){
+  const mes=document.getElementById('fMes').value;
+  const mudouMes=mes!==AF.mes;
+  AF.equipe=document.getElementById('fEquipe').value;
+  AF.mes=mes;
+  AF.data=mudouMes?'all':document.getElementById('fData').value; // trocar o mês zera o filtro de dia
+  render();
+}
+function clearF(){AF={equipe:'all',mes:AF.mes,data:'all'};render();} // mantém o mês escolhido
 loadAll();
 </script>
 </body>
